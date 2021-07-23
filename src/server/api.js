@@ -1,18 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-// middleware that is specific to this router
-router.use(function timeLog(req, res, next) {
-  console.log("Time: ", Date.now());
-  next();
-});
-// define the home page route
-router.get("/", function(req, res) {
-  res.send("success");
-});
-// define the about route
-router.get("/about", function(req, res) {
-  res.send("About birds");
-});
+const track = require("./Track");
+const artist = require("./Artist");
+
+router.use("/track", track);
+router.use("/artist", artist);
 
 module.exports = router;

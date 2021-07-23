@@ -24,15 +24,19 @@ const getDb = async () => {
     mongoClient = await connectMongo();
     db = mongoClient.db("spotify");
     process.on("SIGTERM", () => {
-      mongoClient.close();
+      disconnect();
     });
     process.on("SIGINT", () => {
-      mongoClient.close();
+      disconnect();
     });
   }
   return db;
 };
 
+const disconnect = () => {
+  mongoClient.close();
+  console.log("MongoDB connection closed");
+};
 module.exports = {
   connectMongo,
   getDb,

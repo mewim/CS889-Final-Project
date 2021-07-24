@@ -1,12 +1,19 @@
 <template>
   <div>
-    <h1>Collaboration Network View</h1>
+    <h1>Similarity View</h1>
   </div>
 </template>
 
 <script>
 export default {
-  name: "CollaborationNetwork",
+  name: "SimilarityView",
+  data() {
+    return {};
+  },
+  mounted: async function () {},
+  methods: {
+    tabLoaded: async function () {},
+  },
 };
 </script>
 

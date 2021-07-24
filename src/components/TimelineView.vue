@@ -1,12 +1,19 @@
 <template>
   <div>
-    <h1>Similarity View</h1>
+    <h1>Timeline View</h1>
   </div>
 </template>
 
 <script>
 export default {
-  name: "Similarity",
+  name: "TimelineView",
+  data() {
+    return {};
+  },
+  mounted: async function () {},
+  methods: {
+    tabLoaded: async function () {},
+  },
 };
 </script>
 

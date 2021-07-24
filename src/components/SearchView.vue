@@ -6,7 +6,14 @@
 
 <script>
 export default {
-  name: "Search",
+  name: "SearchView",
+  data() {
+    return {};
+  },
+  mounted: async function () {},
+  methods: {
+    tabLoaded: async function () {},
+  },
 };
 </script>
 

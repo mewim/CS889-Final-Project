@@ -2,12 +2,14 @@
 <template>
   <div id="app">
     <div>
-      <b-tabs content-class="mt-3">
+      <b-tabs content-class="mt-3" v-model="tabIndex">
         <b-tab title="Spotify Viz" disabled></b-tab>
-        <b-tab title="Similarity" active><Similarity /></b-tab>
-        <b-tab title="Collaboration Network"><CollaborationNetwork /></b-tab>
-        <b-tab title="Timeline"><Timeline /></b-tab>
-        <b-tab title="Search"><Search /></b-tab>
+        <b-tab title="SimilarityView"><SimilarityView ref="1" /></b-tab>
+        <b-tab title="Collaboration Network"
+          ><CollaborationNetworkView ref="2"
+        /></b-tab>
+        <b-tab title="Timeline"><TimelineView ref="3" /></b-tab>
+        <b-tab title="Search"><SearchView ref="4" /></b-tab>
       </b-tabs>
     </div>
   </div>
@@ -15,18 +17,27 @@
 
 
 <script>
-import Similarity from "./components/Similarity.vue";
-import CollaborationNetwork from "./components/CollaborationNetwork.vue";
-import Timeline from "./components/Timeline.vue";
-import Search from "./components/Search.vue";
+import SimilarityView from "./components/SimilarityView.vue";
+import CollaborationNetworkView from "./components/CollaborationNetworkView.vue";
+import TimelineView from "./components/TimelineView.vue";
+import SearchView from "./components/SearchView.vue";
 
 export default {
   name: "App",
   components: {
-    Similarity,
-    CollaborationNetwork,
-    Timeline,
-    Search,
+    SimilarityView,
+    CollaborationNetworkView,
+    TimelineView,
+    SearchView,
+  },
+  data() {
+    return { tabIndex: 1 };
+  },
+  watch: {
+    tabIndex: function () {
+      const component = this.$refs[String(this.tabIndex)];
+      component.tabLoaded();
+    },
   },
 };
 </script>
@@ -46,7 +57,7 @@ $padding: 8px;
   padding: $padding;
   min-height: calc(100vh - #{$navbar-height});
   width: 100%;
-  > .tab-pane.active {
+  > .tab-pane {
     height: calc(100vh - #{$navbar-height + $padding * 2});
     width: calc(100% - #{$padding * 2});
     position: absolute;

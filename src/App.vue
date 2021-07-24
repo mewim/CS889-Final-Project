@@ -4,8 +4,10 @@
     <div>
       <b-tabs content-class="mt-3">
         <b-tab title="Spotify Viz" disabled></b-tab>
-        <b-tab title="First" active><HelloWorld msg="Test" /></b-tab>
-        <b-tab title="Second"><p>I'm the second tab</p></b-tab>
+        <b-tab title="Similarity" active><HelloWorld msg="Tab1" /></b-tab>
+        <b-tab title="Collaboration Network"><HelloWorld msg="Tab2" /></b-tab>
+        <b-tab title="Timeline"><HelloWorld msg="Tab3" /></b-tab>
+        <b-tab title="Search"><HelloWorld msg="Tab4" /></b-tab>
       </b-tabs>
     </div>
   </div>

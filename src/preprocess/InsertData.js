@@ -3,7 +3,7 @@ const fs = require("fs");
 const mongodb = require("mongodb");
 
 const MONGO_URI =
-  "mongodb://Admin:ZeYyVGHQ8W37WWCq9EdiMyQaN8zHKZGw@cs889-db.mew.im:23333/?authSource=admin";
+  "mongodb://admin:ZeYyVGHQ8W37WWCq9EdiMyQaN8zHKZGw@cs889-db.mew.im:23333/?authSource=admin";
 
 const parseArtists = () => {
   const results = [];

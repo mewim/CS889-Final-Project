@@ -4,10 +4,10 @@
     <div>
       <b-tabs content-class="mt-3">
         <b-tab title="Spotify Viz" disabled></b-tab>
-        <b-tab title="Similarity" active><HelloWorld msg="Tab1" /></b-tab>
-        <b-tab title="Collaboration Network"><HelloWorld msg="Tab2" /></b-tab>
-        <b-tab title="Timeline"><HelloWorld msg="Tab3" /></b-tab>
-        <b-tab title="Search"><HelloWorld msg="Tab4" /></b-tab>
+        <b-tab title="Similarity" active><Similarity /></b-tab>
+        <b-tab title="Collaboration Network"><CollaborationNetwork /></b-tab>
+        <b-tab title="Timeline"><Timeline /></b-tab>
+        <b-tab title="Search"><Search /></b-tab>
       </b-tabs>
     </div>
   </div>
@@ -15,12 +15,18 @@
 
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import Similarity from "./components/Similarity.vue";
+import CollaborationNetwork from "./components/CollaborationNetwork.vue";
+import Timeline from "./components/Timeline.vue";
+import Search from "./components/Search.vue";
 
 export default {
   name: "App",
   components: {
-    HelloWorld,
+    Similarity,
+    CollaborationNetwork,
+    Timeline,
+    Search,
   },
 };
 </script>

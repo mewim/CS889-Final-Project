@@ -4,7 +4,7 @@
     <div>
       <b-tabs content-class="mt-3" v-model="tabIndex">
         <b-tab title="Spotify Viz" disabled></b-tab>
-        <b-tab title="SimilarityView"><SimilarityView ref="1" /></b-tab>
+        <b-tab title="Similarity"><SimilarityView ref="1" /></b-tab>
         <b-tab title="Collaboration Network"
           ><CollaborationNetworkView ref="2"
         /></b-tab>

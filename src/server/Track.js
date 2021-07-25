@@ -11,7 +11,6 @@ const YOUTUBE_API_URL = "https://youtube.googleapis.com/youtube/v3/search";
 router.get("/", async (req, res) => {
   const db = await mongoUtil.getDb();
   const name = req.query.name;
-  console.log(name);
   if (!name) {
     return res.sendStatus(400);
   }
@@ -59,7 +58,6 @@ router.get("/:id/youtube-url", async (req, res) => {
     document.original_artists.join(" "),
     document.release_year,
   ].join(" ");
-  console.log(keyword);
 
   const params = new URLSearchParams([
     ["key", YOUTUBE_API_KEY],
@@ -71,7 +69,6 @@ router.get("/:id/youtube-url", async (req, res) => {
     const youtubeResults = await axios
       .get(YOUTUBE_API_URL, { params })
       .then((res) => res.data);
-    console.log(youtubeResults.items);
     const youtubeId = youtubeResults.items[0].id.videoId;
     const url = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&enablejsapi=1`;
     return res.send({ url });

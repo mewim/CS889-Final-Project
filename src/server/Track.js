@@ -6,6 +6,36 @@ const ObjectId = mongodb.ObjectId;
 
 const COLLECTION = "tracks";
 
+router.get("/", async (req, res) => {
+  const db = await mongoUtil.getDb();
+  const name = req.query.name;
+  console.log(name);
+  if (!name) {
+    return res.sendStatus(400);
+  }
+  const results = await db
+    .collection(COLLECTION)
+    .aggregate([
+      {
+        $match: {
+          $text: {
+            $search: name,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "artists",
+          localField: "artists_id",
+          foreignField: "_id",
+          as: "artists",
+        },
+      },
+    ])
+    .toArray();
+  return res.send(results);
+});
+
 router.get("/:id", async (req, res) => {
   const db = await mongoUtil.getDb();
   const id = req.params.id;

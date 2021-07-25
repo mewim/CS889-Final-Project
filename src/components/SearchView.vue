@@ -73,6 +73,7 @@ export default {
     },
     searchButtonClicked: async function () {
       if (this.searchBarText.length === 0) {
+        this.results = [];
         return;
       }
       this.results = await this.loadSeachResult(this.searchBarText);

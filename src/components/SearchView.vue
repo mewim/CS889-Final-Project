@@ -114,7 +114,7 @@ export default {
 .search-results-player-container {
   display: flex;
   flex-direction: row;
-  height: calc(100% - 38px);
+  height: calc(100% - 48px);
   .serach-results-container {
     flex-grow: 1;
     padding-right: 4px;

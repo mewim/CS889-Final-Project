@@ -86,9 +86,7 @@ export default {
       return results;
     },
     playTrack: async function (trackId) {
-      const res = await axios.get(
-        `http://localhost:8080/api/track/${trackId}/youtube-url`
-      );
+      const res = await axios.get(`/api/track/${trackId}/youtube-url`);
       const url = res.data.url;
       this.currentSongUrl = url;
     },

@@ -116,7 +116,7 @@ const main = async () => {
   console.log("Insertion success");
   mongoClient.close();
   console.log("Disconnected from MongoDB");
-  process.exit(1);
+  process.exit(0);
 };
 
 main();

@@ -76,7 +76,6 @@ export default {
         return;
       }
       this.results = await this.loadSeachResult(this.searchBarText);
-      console.log(this.results);
     },
     loadSeachResult: async function (keyword) {
       const params = new URLSearchParams([["name", keyword]]);

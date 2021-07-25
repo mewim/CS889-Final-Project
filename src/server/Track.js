@@ -8,6 +8,8 @@ const ObjectId = mongodb.ObjectId;
 const COLLECTION = "tracks";
 const YOUTUBE_API_KEY = "AIzaSyCswwsMxnZ39qTYGC6GGBOWKxydAmyW_2E";
 const YOUTUBE_API_URL = "https://youtube.googleapis.com/youtube/v3/search";
+const YOUTUBE_WEB_SEARCH = "https://www.youtube.com/results";
+
 const AGGREGATION_FIELDS = [
   "duration_ms",
   "danceability",
@@ -66,6 +68,40 @@ const aggregateAttributesByYear = async (startYear, endYear) => {
     formattedAggregationResult.count = aggregationResult[0].count;
   }
   return formattedAggregationResult;
+};
+
+const getUrlFromYoutubeId = (youtubeId) => {
+  return `https://www.youtube.com/embed/${youtubeId}?autoplay=1&enablejsapi=1`;
+};
+
+const getYoutubeUrlFromAPI = async (keyword) => {
+  const params = new URLSearchParams([
+    ["key", YOUTUBE_API_KEY],
+    ["q", keyword],
+    ["part", "snippet"],
+  ]);
+
+  const youtubeResults = await axios
+    .get(YOUTUBE_API_URL, { params })
+    .then((res) => res.data);
+  const youtubeId = youtubeResults.items[0].id.videoId;
+  const url = getUrlFromYoutubeId(youtubeId);
+  return url;
+};
+
+const getYoutubeUrlAlternative = async (keyword) => {
+  const params = new URLSearchParams([["search_query", keyword]]);
+  const youtubeResults = await axios
+    .get(YOUTUBE_WEB_SEARCH, {
+      params,
+      headers: {
+        "Accept-Encoding": "gzip, deflate, br",
+      },
+    })
+    .then((res) => res.data);
+  const stringWithFirstLink = youtubeResults.split(`url":"/watch?v=`)[1];
+  const firstId = stringWithFirstLink.split('"')[0];
+  return getUrlFromYoutubeId(firstId);
 };
 
 router.get("/", async (req, res) => {
@@ -176,19 +212,9 @@ router.get("/:id/youtube-url", async (req, res) => {
     document.original_artists.join(" "),
     document.release_year,
   ].join(" ");
-
-  const params = new URLSearchParams([
-    ["key", YOUTUBE_API_KEY],
-    ["q", keyword],
-    ["part", "snippet"],
-  ]);
-
   try {
-    const youtubeResults = await axios
-      .get(YOUTUBE_API_URL, { params })
-      .then((res) => res.data);
-    const youtubeId = youtubeResults.items[0].id.videoId;
-    const url = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&enablejsapi=1`;
+    // const url = await getYoutubeUrlFromAPI(keyword);
+    const url = await getYoutubeUrlAlternative(keyword);
     return res.send({ url });
   } catch (err) {
     return res.sendStatus(500);

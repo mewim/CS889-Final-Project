@@ -6,6 +6,7 @@
 
 <script>
 import * as d3 from "d3";
+import axios from "axios";
 
 export default {
   name: "CollaborationNetworkView",
@@ -30,25 +31,40 @@ export default {
     },
 
     loadData: async function () {
-      const edges = await d3.csv("/jean-complete-edge.csv");
-      const nodes = await d3.csv("/jean-complete-node.csv");
-      const nodeIdHash = {};
+      // Hard-coded artist for now: Eminem
+      const apiResult = await this.getCollaborationNetworkByArtist(
+        "60fb73f6a8b65b7b2d9153df",
+        2
+      );
+      const edges = apiResult.relationships;
+      const nodes = apiResult.artists;
       for (let i = 0; i < nodes.length; ++i) {
-        const currNode = nodes[i];
-        nodeIdHash[currNode.Id] = i;
-        nodes[i].id = i;
+        nodes[i].id = nodes[i]._id;
       }
       for (let i = 0; i < edges.length; ++i) {
-        const source = nodeIdHash[edges[i].Source];
-        const target = nodeIdHash[edges[i].Target];
-
-        delete edges[i].Source;
-        delete edges[i].Target;
-        edges[i].source = source;
-        edges[i].target = target;
+        edges[i].source = edges[i].artist_1;
+        edges[i].target = edges[i].artist_2;
       }
       this.graphData.nodes = nodes;
       this.graphData.edges = edges;
+    },
+
+    getCollaborationNetworkByArtist: function (pivotId, depth) {
+      const paramsArray = [];
+      if (!pivotId) {
+        throw new Error(
+          "Pivot artist ID must be specified for `getCollaborationNetworkByArtist`"
+        );
+      }
+      paramsArray.push(["pivot", pivotId]);
+
+      if (depth) {
+        paramsArray.push(["depth", depth]);
+      }
+      const params = new URLSearchParams(paramsArray);
+      return axios
+        .get(`/api/aritstcollaboration`, { params })
+        .then((res) => res.data);
     },
 
     drawNodeLinkDiagram: function () {
@@ -116,8 +132,8 @@ export default {
         .attr("fill", "#66ccff")
         .call(drag(simulation));
 
-      node.append("title").text((d) => `${d.Id}\n${d.Label}\n${d.Description}`);
-      link.append("title").text((d) => `${d.Id}`);
+      node.append("title").text((d) => `${d.name}\n${d.genres.join(", ")}`);
+      link.append("title").text((d) => `${d.count} collaborations`);
 
       window.node = node;
       window.link = link;

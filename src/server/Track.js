@@ -236,8 +236,4 @@ router.get("/:id", async (req, res) => {
   res.send(document);
 });
 
-// router.post("/artists", async (req, res) => {
-//   const
-// })
-
 module.exports = router;

@@ -49,7 +49,7 @@ export default {
       this.graphData.edges = edges;
     },
 
-    getCollaborationNetworkByArtist: function (pivotId, depth) {
+    getCollaborationNetworkByArtist: function (pivotId, depth, fetchAllEdges) {
       const paramsArray = [];
       if (!pivotId) {
         throw new Error(
@@ -58,6 +58,9 @@ export default {
       }
       paramsArray.push(["pivot", pivotId]);
 
+      if (fetchAllEdges) {
+        paramsArray.push(["fetch_all_edges", "true"]);
+      }
       if (depth) {
         paramsArray.push(["depth", depth]);
       }

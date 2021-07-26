@@ -12,6 +12,7 @@ router.get("/", async (req, res) => {
   if (!depth) {
     depth = 1;
   }
+  let fetchAllEdges = req.query.fetch_all_edges === "true";
 
   const db = await mongoUtil.getDb();
   if (!mongodb.ObjectId.isValid(pivot)) {
@@ -23,7 +24,7 @@ router.get("/", async (req, res) => {
   const visitedSet = new Set();
 
   for (let i = 0; i < depth; ++i) {
-    const currResult = await db
+    const currArtistResults = await db
       .collection(COLLECTION)
       .find({
         $or: [
@@ -32,7 +33,27 @@ router.get("/", async (req, res) => {
         ],
       })
       .toArray();
+    let currResult;
+    if (fetchAllEdges) {
+      const currArtistSet = new Set();
+      currArtistResults.forEach((a) => {
+        currArtistSet.add(a.artist_1.toHexString());
+        currArtistSet.add(a.artist_2.toHexString());
+      });
 
+      const currArtists = Array.from(currArtistSet).map((i) => new ObjectId(i));
+      currResult = await db
+        .collection(COLLECTION)
+        .find({
+          $and: [
+            { artist_1: { $in: currArtists } },
+            { artist_2: { $in: currArtists } },
+          ],
+        })
+        .toArray();
+    } else {
+      currResult = currArtistResults;
+    }
     nextQuery.forEach((oid) => {
       visitedSet.add(oid.toHexString());
     });

@@ -9,9 +9,16 @@
         <b-card-text id="song-body">
           Some quick example text to build on the card title and make up the bulk of the card's content.
         </b-card-text>
-        <SpotifyPlayer
+        <!-- <SpotifyPlayer
           :token="currentWebPlayerToken"
-          :uris="currentURI" />
+          :uris="currentURI" /> -->
+        <iframe
+          type="text/html"
+          style="width:27.5em;height:15.46em;"
+          :src="currentSongUrl"
+          frameborder="0"
+          allow="autoplay"
+        ></iframe>
       </b-card>
     </div>
     <div id="nearby-card" 
@@ -35,15 +42,17 @@
 import * as d3 from "d3";
 import * as axios from "axios";
 import * as qs from "qs";
-import SpotifyPlayer from 'react-spotify-web-playback';
+// import SpotifyPlayer from 'react-spotify-web-playback';
+import * as stringSimilarity from "string-similarity";
 
 export default {
   name: "SimilarityView",
-  components: {
-    SpotifyPlayer,
-  },
+  // components: {
+  //   SpotifyPlayer,
+  // },
   data() {
     // get web API token here: https://react-spotify-web-playback.gilbarbara.dev/
+    // unfortunately this token is valid for 1 hour
     return {
       songNames: [],
       songData: [],
@@ -60,8 +69,9 @@ export default {
       currSelected: -1,
       scale: 1.0,
       spotifyToken: "",
-      currentWebPlayerToken: "BQCS_JR6xIAg-DmBA6BUq4llrHqVNP3byjjlmzCggaDnoD1Fs8glHZRVjxP7YXgAdtv5gHjzjw7y9iCoEOJdIqZOZkMS0GV4V_vfERNITPiBwSGH_lCOZAUk9LQWBpqfZUKWU0KbuQ--oKVpemrb_1lFLYw6yKQf1yTli6w5k_-ZdH_ppEVGzrdUJxs4",
-      currentURI: ""
+      currentWebPlayerToken: "BQB0WYTfr1SfyU6aUUq24fpZ3FyVKCnlINFSe-Byze206ry5fGshbp3-ytNDB0TG5wc8VMAfg02fI3dlbP0ImgtV8NK5ThaY-Q0MeqplLMosFne_lPyywTqCFugImYnrTc55LWrDIlYWPW8y04SBelsE7zfePDl79qk4zuZ5c6HgCRZgAwnyb-vwbA2F",
+      currentURI: "",
+      currentSongUrl: "",
     };
   },
   mounted: async function () {},
@@ -153,7 +163,7 @@ export default {
     draw2DPlot: async function() {
       var vueinstance = this; 
       const handler = d3.zoom().scaleExtent([1, 5]).on("zoom", updateChart);
-      
+
       var svg = d3.select('#similarity-view').append("svg").attr("width", "100%").attr("height", "100%").call(handler);
       var x = d3.scaleLinear().range([0, this.width]).domain([this.xMin, this.xMax]);
       var y = d3.scaleLinear().range([this.height, 0]).domain([this.yMin, this.yMax]);
@@ -173,7 +183,7 @@ export default {
       .attr("r", 5)
       .style("fill", function (d) { return c((d.c-1)/99.0) })
       .attr("display", function(d) { return (d.p >= (25 - p(1.0))) ? "inline" : "none" })
-      .on("click", function(d) {
+      .on("click", async function(d) {
         if (vueinstance.currSelected && vueinstance.currSelected != -1) {
           d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke", "none");
         }
@@ -186,10 +196,29 @@ export default {
         d3.select(".circ-"+vueinstance.currSelected.toString())
           .style("stroke-width", 3*vueinstance.scale).style("stroke", "black");
         processNearbySongs(d, vueinstance);
-        vueinstance.connectToSpotify().then(async function() {
-          var trackURI = await vueinstance.getFirstTrack(d.name+" "+d.artists);
-          vueinstance.currentURI = trackURI;
-        });      
+        // vueinstance.connectToSpotify().then(async function() {
+        //   var trackURI = await vueinstance.getFirstTrack(d.name+" "+d.artists);
+        //   vueinstance.currentURI = trackURI;
+        // });
+        const params = new URLSearchParams([["name", d.name+" "+d.artists]]);
+        const results = await axios
+          .get(`/api/track`, { params })
+          .then((res) => res.data);
+        var names = results.map((k) => k.name);
+        var matches1 = stringSimilarity.findBestMatch(d.name, names);
+        var matches2 = stringSimilarity.findBestMatch(d.name+" "+
+          d.artists.replaceAll("'", "").replaceAll("[", "").replaceAll("]", ""), names);
+        
+        if (matches1.bestMatchIndex == matches2.bestMatchIndex &&
+            matches1.bestMatch.rating >= 0.3 && matches2.bestMatch.rating >= 0.3) {
+          d3.select("iframe").style("display", "inline");
+          const res = await axios.get(`/api/track/${results[matches1.bestMatchIndex]._id}/youtube-url`);
+          const url = res.data.url;
+          vueinstance.currentSongUrl = url;
+        } else {
+          vueinstance.currentSongUrl = "";
+          d3.select("iframe").style("display", "none");
+        }
       });
       
       async function processNearbySongs(d, v) {
@@ -207,7 +236,7 @@ export default {
           return first[1] - second[1];
         });
         var elements = "<ul>";
-        for (j = 1; j <= 10; ++j) {
+        for (j = 1; j <= 5; ++j) {
           elements += "<li>" + v.songData[mem[j][0]].name;
         }
         elements +="</ul>"

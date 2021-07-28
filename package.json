@@ -25,6 +25,7 @@
     "request": "^2.88.2",
     "react-spotify-web-playback": "^0.8.2",
     "spotify-web-api-js": "^1.5.1",
+    "string-similarity": "^4.0.4",
     "vue": "^2.6.11",
     "vuex": "^3.6.2",
     "vuera": "^0.2.7"

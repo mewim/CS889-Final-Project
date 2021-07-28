@@ -14,12 +14,20 @@
     "csv-parser": "^3.0.0",
     "d3": "^5.7.0",
     "d3-force": "^3.0.0",
+    "d3-zoom": "^3.0.0",
     "express": "^4.17.1",
     "moment": "^2.29.1",
     "mongodb": "^4.0.1",
     "nodemon": "^2.0.12",
+    "qs": "^6.10.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "request": "^2.88.2",
+    "react-spotify-web-playback": "^0.8.2",
+    "spotify-web-api-js": "^1.5.1",
     "vue": "^2.6.11",
-    "vuex": "^3.6.2"
+    "vuex": "^3.6.2",
+    "vuera": "^0.2.7"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

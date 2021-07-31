@@ -9,9 +9,6 @@
         <b-card-text id="song-body">
           Some quick example text to build on the card title and make up the bulk of the card's content.
         </b-card-text>
-        <!-- <SpotifyPlayer
-          :token="currentWebPlayerToken"
-          :uris="currentURI" /> -->
         <iframe
           type="text/html"
           style="width:27.5em;height:15.46em;"
@@ -41,18 +38,11 @@
 <script>
 import * as d3 from "d3";
 import * as axios from "axios";
-import * as qs from "qs";
-// import SpotifyPlayer from 'react-spotify-web-playback';
 import * as stringSimilarity from "string-similarity";
 
 export default {
   name: "SimilarityView",
-  // components: {
-  //   SpotifyPlayer,
-  // },
   data() {
-    // get web API token here: https://react-spotify-web-playback.gilbarbara.dev/
-    // unfortunately this token is valid for 1 hour
     return {
       songNames: [],
       songData: [],
@@ -68,9 +58,6 @@ export default {
       maxValue: 0,
       currSelected: -1,
       scale: 1.0,
-      spotifyToken: "",
-      currentWebPlayerToken: "BQB0WYTfr1SfyU6aUUq24fpZ3FyVKCnlINFSe-Byze206ry5fGshbp3-ytNDB0TG5wc8VMAfg02fI3dlbP0ImgtV8NK5ThaY-Q0MeqplLMosFne_lPyywTqCFugImYnrTc55LWrDIlYWPW8y04SBelsE7zfePDl79qk4zuZ5c6HgCRZgAwnyb-vwbA2F",
-      currentURI: "",
       currentSongUrl: "",
     };
   },
@@ -89,7 +76,7 @@ export default {
       this.rendered = true;
     },
     loadData: async function() {
-      const tracks = await d3.csv("/tracks10k.csv");
+      const tracks = await d3.csv("/tracks13k.csv");
 
       for (let i = 0; i < tracks.length; ++i) {
         this.songNames.push(tracks[i].name);
@@ -109,57 +96,6 @@ export default {
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
     },
-    connectToSpotify: async function() {
-      var client_id = '8518baec4d274639ae796ad25b1e6d51'; // Your client id
-      var client_secret = 'ae6f30af0d804fb3a0a4e7a534f0f90e'; // Your secret
-
-      // https://gist.github.com/donstefani/70ef1069d4eab7f2339359526563aab2
-      try {
-        const response = await axios.post(
-          'https://accounts.spotify.com/api/token',
-          qs.stringify({
-            grant_type: 'client_credentials',
-          }),
-          {
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            auth: {
-              username: client_id,
-              password: client_secret,
-            },
-          });
-        this.spotifyToken = response.data.access_token;
-        return response;
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    getFirstTrack: async function(q) {
-      //console.log(this.spotifyToken, q);
-      axios.defaults.headers.common = {'Authorization': `Bearer ${this.spotifyToken}`}
-      try {
-        const response = await axios.get(
-          "https://api.spotify.com/v1/search",
-          {
-            params: {
-              'q': q,
-              'type': "track",
-              'market': "US",
-            }
-          },
-          {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-          });
-        return response.data.tracks.items[0].uri;
-      } catch (error) {
-        console.log(error);
-      }
-    },
     draw2DPlot: async function() {
       var vueinstance = this; 
       const handler = d3.zoom().scaleExtent([1, 5]).on("zoom", updateChart);
@@ -168,8 +104,7 @@ export default {
       var x = d3.scaleLinear().range([0, this.width]).domain([this.xMin, this.xMax]);
       var y = d3.scaleLinear().range([this.height, 0]).domain([this.yMin, this.yMax]);
       var c = d3.scaleSequential(d3.interpolateTurbo);
-      var p = d3.scaleLinear().range([0, 25]).domain([1, 5]);
-
+      var p = d3.scaleLinear().range([60, 100]).domain([1, 5]);
     
       var gDot = svg.append('g');
       gDot
@@ -181,8 +116,8 @@ export default {
       .attr("cx", function (d) { return x(d.x); } )
       .attr("cy", function (d) { return y(d.y); } )
       .attr("r", 5)
-      .style("fill", function (d) { return c((d.c-1)/99.0) })
-      .attr("display", function(d) { return (d.p >= (25 - p(1.0))) ? "inline" : "none" })
+      .style("fill", function (d) { return c((d.c)/2201.0) })
+      .attr("display", function(d) { return (d.p >= 140 - p(1.0)) ? "inline" : "none" })
       .on("click", async function(d) {
         if (vueinstance.currSelected && vueinstance.currSelected != -1) {
           d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke", "none");
@@ -196,10 +131,6 @@ export default {
         d3.select(".circ-"+vueinstance.currSelected.toString())
           .style("stroke-width", 3*vueinstance.scale).style("stroke", "black");
         processNearbySongs(d, vueinstance);
-        // vueinstance.connectToSpotify().then(async function() {
-        //   var trackURI = await vueinstance.getFirstTrack(d.name+" "+d.artists);
-        //   vueinstance.currentURI = trackURI;
-        // });
         const params = new URLSearchParams([["name", d.name+" "+d.artists]]);
         const results = await axios
           .get(`/api/track`, { params })
@@ -253,7 +184,7 @@ export default {
         .attr("cy", function (d) { return newY(d.y); } )
         .attr("r", 5*d3.event.transform.k)
         .attr("display", function(d) { 
-          return (d.p >= (25 - p(d3.event.transform.k))) ? "inline" : "none" 
+          return (d.p >= (140 - p(d3.event.transform.k))) ? "inline" : "none" 
         });
         if (vueinstance.currSelected && vueinstance.currSelected != -1) {
           d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke-width", 3*d3.event.transform.k);

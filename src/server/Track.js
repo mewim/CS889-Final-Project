@@ -242,36 +242,82 @@ router.get("/combination/:a/:b", async (req, res) => {
   const embeddingtype = await db.collection("trackembeddingtypes").findOne({
     attributes: attrs,
   });
-  const documents = await db.collection("tracktsneembeddings")
+  const documents = await db
+    .collection(COLLECTION)
     .aggregate([
-    {
-      '$match': {
-        track_embedding_type_id: {'$eq': embeddingtype._id},
+      {
+        $match: {
+          popularity: {
+            $gte: parseInt(req.params.b),
+          },
+        },
       },
-    },
-    {
-      '$lookup': {
-        'from': 'tracks',
-        'localField': 'track_id',
-        'foreignField': '_id',
-        'as': 'info',
+      {
+        $limit: 2000,
       },
-    },
-    {
-      '$unwind': '$info',
-    },
-    {
-      '$match': {
-        'info.popularity': {'$gte': parseInt(req.params.b)},
-      }
-    },
-    {
-      '$limit': 2000,
-    },
-    // {
-    //   '$count': 'num_rows',
-    // } 
-  ]).toArray();
+      {
+        $lookup: {
+          from: "tracktsneembeddings",
+          as: "tsneembedding",
+          let: {
+            track_id: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$track_id", "$$track_id"],
+                    },
+                    {
+                      $eq: ["$track_embedding_type_id", embeddingtype._id],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          info: {
+            _id: "$_id",
+            name: "$name",
+            popularity: "$popularity",
+            duration_ms: "$duration_ms",
+            explicit: "$explicit",
+            release_date: "$release_date",
+            danceability: "$danceability",
+            energy: "$energy",
+            key: "$key",
+            loudness: "$loudness",
+            mode: "$mode",
+            speechiness: "$speechiness",
+            acousticness: "$acousticness",
+            instrumentalness: "$instrumentalness",
+            liveness: "$liveness",
+            valence: "$valence",
+            tempo: "$tempo",
+            time_signature: "$time_signature",
+            original_id_artists: "$original_id_artists",
+            original_artists: "$original_artists",
+            original_id: "$original_id",
+            artists_id: "$artists_id",
+            release_year: "$release_year",
+          },
+          dim_1: { $first: "$tsneembedding.dim_1" },
+          dim_2: { $first: "$tsneembedding.dim_2" },
+          _id: { $first: "$tsneembedding._id" },
+          track_id: "$_id",
+          track_embedding_type_id: {
+            $first: "$tsneembedding.track_embedding_type_id",
+          },
+        },
+      },
+    ])
+    .toArray();
   res.send(documents);
 });
 

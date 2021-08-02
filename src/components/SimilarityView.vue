@@ -1,8 +1,8 @@
 <template>
-  <div id="similarity-view">
+  <div id="similarity-view" style="width:100%;height:100%;">
     <div id="song-card" 
       style="position:absolute;bottom:0px;padding-bottom:1.25rem;width:fit-content;height:fit-content;display: none; z-index: 5;">
-      <b-card style="width: 30rem;" class="mb-2">
+      <b-card style="width: 30rem;background-color:#f8f8f8;" class="mb-2">
         <b-card-title id="song-title" style="text-transform: capitalize;">
           Card Title
         </b-card-title>
@@ -21,7 +21,7 @@
     </div>
     <div id="nearby-card" 
       style="position:absolute;width:fit-content;height:fit-content;display: none; z-index: 4;">
-      <b-card style="width: 30em;" class="mb-2">
+      <b-card style="width: 30em;background-color:#f8f8f8;" class="mb-2">
         <b-card-title id="nearby-title" style="text-transform: capitalize;">
           Nearby Songs
         </b-card-title>
@@ -34,7 +34,7 @@
       </b-card>
     </div>
     <div id="selection-card" style="right:0px; top:0px;position:absolute;width:fit-content: height: fit-content; z-index:3;">
-      <b-card style="width: 15em;" class="mb-2">
+      <b-card style="width: 15em;background-color:#f8f8f8;" class="mb-2">
         <b-card-title id="selection-title" style="text-transform: capitalize;">
           Select Attributes
         </b-card-title>
@@ -56,10 +56,10 @@
     </div>
     <div id="spinner" style="position: absolute; width:fit-content;height:fit-content;z-index:6; display:none;">
       <b-card style="width: 15em;" class="mb-2">
-        <img src="/loading.gif" style="width:12.5em;"/>
+        <img src="/loading2.gif" style="width:12.5em;"/>
       </b-card>
     </div>
-    <svg style="position:absolute;"></svg>
+    <svg style="position:absolute;width:100%;height:100%;"></svg>
 
   </div>
 </template>
@@ -97,19 +97,24 @@ export default {
       ],
     };
   },
-  mounted: async function () {},
+  mounted: async function () {
+    await setTimeout(function() {}, 1000);
+    var parentDiv = document.getElementById("similarity-view");
+    this.width = parentDiv.clientWidth;
+    this.height = parentDiv.clientHeight;
+    d3.select("#spinner").style("left", (this.width/2-128).toString()+"px")
+      .style("top", (this.height/2-128).toString()+"px")
+      .style("display", "inline");
+  },
+  created: async function () {},
   methods: {
     tabLoaded: async function () {
       if (this.rendered) {
         return;
       }
       await this.loadData(this.getData(60));
-      var parentDiv = document.getElementById("similarity-view");
-      this.width = parentDiv.clientWidth;
-      this.height = parentDiv.clientHeight;
       this.maxValue = this.songData.length;
-      d3.select("#spinner").style("left", (this.width/2-128).toString()+"px")
-        .style("top", (this.height/2-128).toString()+"px");
+      d3.select("#spinner").style("display", "none");
       this.draw2DPlot();
       this.rendered = true;
     },
@@ -181,7 +186,7 @@ export default {
       var vueinstance = this; 
       const handler = d3.zoom().scaleExtent([1, 5]).on("zoom", updateChart);
 
-      var svg = d3.select("svg").attr("width", "100%").attr("height", "100%").call(handler);
+      var svg = d3.select("svg").call(handler);
       var x = d3.scaleLinear().range([0, this.width]).domain([this.xMin, this.xMax]);
       var y = d3.scaleLinear().range([this.height, 0]).domain([this.yMin, this.yMax]);
       var c = d3.scaleSequential(d3.interpolateRainbow);
@@ -267,7 +272,7 @@ export default {
         .selectAll('circle')
         .attr("cx", function (d) { return newX(d.x); } )
         .attr("cy", function (d) { return newY(d.y); } )
-        .attr("r", 5*d3.event.transform.k)
+        .attr("r", 5) //*d3.event.transform.k)
         .attr("display", function(d) { 
           return (d.p >= (140 - p(d3.event.transform.k))) ? "inline" : "none" 
         });

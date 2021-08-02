@@ -299,4 +299,43 @@ router.get("/:id", async (req, res) => {
   res.send(document);
 });
 
+router.get("/combination/:a/:b", async (req, res) => {
+  const db = await mongoUtil.getDb();
+  attrs = req.params.a.split(",");
+  const embeddingtype = await db.collection("trackembeddingtypes").findOne({
+    attributes: attrs,
+  });
+  const documents = await db.collection("tracktsneembeddings")
+    .aggregate([
+    {
+      '$match': {
+        track_embedding_type_id: {'$eq': embeddingtype._id},
+      },
+    },
+    {
+      '$lookup': {
+        'from': 'tracks',
+        'localField': 'track_id',
+        'foreignField': '_id',
+        'as': 'info',
+      },
+    },
+    {
+      '$unwind': '$info',
+    },
+    {
+      '$match': {
+        'info.popularity': {'$gte': parseInt(req.params.b)},
+      }
+    },
+    {
+      '$limit': 2000,
+    },
+    // {
+    //   '$count': 'num_rows',
+    // } 
+  ]).toArray();
+  res.send(documents);
+});
+
 module.exports = router;

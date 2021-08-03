@@ -28,7 +28,7 @@
                     oallowfullscreen="oallowfullscreen" 
                     webkitallowfullscreen="webkitallowfullscreen"
                     type="text/html"
-                    style="width:310px;height:180px;"
+                    style="width:100%;"
                     :src="selectedSong.url"
                     frameborder="0"
                     allow="autoplay">
@@ -51,13 +51,23 @@ import * as d3 from "d3";
 const genres = [...Array(11).keys()];  // temp fix
 const songsLimit = 100;
 
-const width = 1100;
-const height = 670;
-const focusMargins = {top: 40, right: 40, bottom: 160, left: 40};
-const contextMargins = {top: 550, right: 40, bottom: 40, left: 40};
-const focusWidth = width - focusMargins.right - focusMargins.left;
-const focusHeight = height - focusMargins.top - focusMargins.bottom;
-const contextHeight = height - contextMargins.top - contextMargins.bottom;
+// const width = 1100;
+// const height = 670;
+// const focusMargins = {top: 40, right: 40, bottom: 160, left: 40};
+// const contextMargins = {top: 550, right: 40, bottom: 40, left: 40};
+// const focusWidth = width - focusMargins.right - focusMargins.left;
+// const focusHeight = height - focusMargins.top - focusMargins.bottom;
+// const contextHeight = height - contextMargins.top - contextMargins.bottom;
+
+let width = null;
+let height = null;
+let focusWidth = null;
+let focusHeight = null;
+let contextHeight = null;
+const focusMargins = {top: 40, right: 40, bottom: null, left: 80};
+const contextMargins = {top: null, right: 40, bottom: 40, left: 80};
+const focusContextSpace = 40;
+const focusContextHeightRatio = 6;
 
 let songDots = null;
 let xAxisFocus = null;
@@ -147,7 +157,7 @@ export default {
     
     loadInitialData: async function () {
         let result = await this.getAttributeAggregations();
-        console.log('Attributes aggregations results:', result);
+        //console.log('Attributes aggregations results:', result);
         let yearInfo = result.release_year;
         this.minDate = new Date("" + yearInfo.min);
         this.maxDate = new Date(yearInfo.max, 11, 31);  // new Date("" + (yearInfo.max+1));
@@ -157,10 +167,10 @@ export default {
         delete result.count;
         //delete result.genre;
         this.attributes = result;
-        console.log('attributes:', this.attributes);
+        //console.log('attributes:', this.attributes);
         
         let aggresult = await this.getAttributeAggregationByYear(yearInfo.min, yearInfo.max, this.currentAttr); 
-        console.log('Current attribute aggregation by year:', aggresult);
+        //console.log('Current attribute aggregation by year:', aggresult);
         aggresult.forEach((s) => {
             s.year = new Date("" + s.year);
         });
@@ -169,7 +179,7 @@ export default {
     
     loadSongsData: function (serverRequestDelay) {
         if (this.serverRequest) {
-            console.log('server request already underway!');
+            //console.log('server request already underway!');
             return;
         }
         
@@ -184,10 +194,10 @@ export default {
             self.serverRequest = false;
             const startYear = self.startDate.toISOString().substring(0,4);
             const endYear = self.endDate.toISOString().substring(0,4);
-            console.log('Server request sent: startYear: ' + startYear + ', endYear: ' + endYear);
+            //console.log('Server request sent: startYear: ' + startYear + ', endYear: ' + endYear);
             
             const result = await self.getTopSongs(startYear, endYear, songsLimit, self.currentAttr);
-            console.log('Songs data from server:', result);
+            //console.log('Songs data from server:', result);
             self.songsData = result.filter((s) => {
                 s.release_date = new Date(s.release_date);
                 if ((s.release_date < self.startDate) || (s.release_date > self.endDate))
@@ -200,12 +210,12 @@ export default {
     },
     
     attributeChanged: async function () {
-        console.log('Attribute changed to:', this.currentAttr);
+        //console.log('Attribute changed to:', this.currentAttr);
         this.selectedSong = {};
         const minYear = this.minDate.toISOString().substring(0,4);
         const maxYear = this.maxDate.toISOString().substring(0,4);
         let aggresult = await this.getAttributeAggregationByYear(minYear, maxYear, this.currentAttr); 
-        console.log('New attribute aggregation by year:', aggresult);
+        //console.log('New attribute aggregation by year:', aggresult);
         aggresult.forEach((s) => {
             s.year = new Date("" + s.year);
         });
@@ -235,6 +245,18 @@ export default {
     
     plotView: function () {
         const attrInfo = this.attributes[this.currentAttr];
+        let parentDiv = document.getElementById("timeline_container");
+        width = parentDiv.clientWidth;
+        height = parentDiv.clientHeight;
+        
+        focusWidth = width - focusMargins.left - focusMargins.right;
+        let focusContextTotalHeight = height - focusMargins.top - contextMargins.bottom - focusContextSpace;
+        focusHeight = ((focusContextHeightRatio) / (focusContextHeightRatio + 1)) * focusContextTotalHeight;
+        contextHeight = focusContextTotalHeight - focusHeight;
+        focusMargins.bottom = height - focusHeight - focusMargins.top;
+        contextMargins.top = height - contextHeight - contextMargins.bottom;
+        //console.log('width:', width, ', height:', height, ', focusWidth:', focusWidth, ', focusHeight:', focusHeight, ', contextHeight:', contextHeight);
+        //console.log('focusMargins:', focusMargins, ', contextMargins:', contextMargins);
         
         d3.select("#timeline_container")
             .append("div")
@@ -283,7 +305,7 @@ export default {
             .on("brush end", brushedCallback);
 
         const zoom = d3.zoom()
-            .scaleExtent([1, 7])  // can set the minimum higher than 1 to prevent further unzooming
+            .scaleExtent([1, 8])  // can set the minimum higher than 1 to prevent further unzooming
             .translateExtent([[0, 0], [focusWidth, focusHeight]])
             .extent([[0, 0], [focusWidth, focusHeight]])
             .on("zoom", zoomedCallback);
@@ -457,15 +479,17 @@ export default {
     top: 15px;
     left: 15px;
     bottom: 15px;
-    width: 350px;
+    width: 23%;  // 350px;
+    //height: 100%;
     background-color: #f8f8f8;
     border: 1px solid #aaa;
 }
 
 #timeline_container {
-    width: auto;
+    width: 76%;
+    height: 98%;
     overflow: auto;
-    margin-left: 390px;
+    margin-left: 23%;  // 390px;
     margin-top: 20px;
 }
 

@@ -15,6 +15,11 @@
           :src="currentSongUrl"
           frameborder="0"
           allow="autoplay"
+          allowfullscreen="allowfullscreen"
+          mozallowfullscreen="mozallowfullscreen" 
+          msallowfullscreen="msallowfullscreen" 
+          oallowfullscreen="oallowfullscreen" 
+          webkitallowfullscreen="webkitallowfullscreen"
           id="similarity-youtube-player"
         ></iframe>
       </b-card>

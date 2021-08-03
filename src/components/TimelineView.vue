@@ -22,6 +22,11 @@
             </b-card-text>
             <div v-show="selectedSong.url">
                 <iframe
+                    allowfullscreen="allowfullscreen"
+                    mozallowfullscreen="mozallowfullscreen" 
+                    msallowfullscreen="msallowfullscreen" 
+                    oallowfullscreen="oallowfullscreen" 
+                    webkitallowfullscreen="webkitallowfullscreen"
                     type="text/html"
                     style="width:310px;height:180px;"
                     :src="selectedSong.url"

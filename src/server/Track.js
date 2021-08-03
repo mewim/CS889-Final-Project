@@ -11,19 +11,21 @@ const YOUTUBE_API_URL = "https://youtube.googleapis.com/youtube/v3/search";
 const YOUTUBE_WEB_SEARCH = "https://www.youtube.com/results";
 
 const AGGREGATION_FIELDS = [
-  "duration_ms",
-  "danceability",
-  "energy",
-  "popularity",
-  "key",
-  "loudness",
-  "speechiness",
-  "acousticness",
-  "instrumentalness",
-  "liveness",
-  "valence",
-  "tempo",
-  "time_signature",
+    { title: 'Duration', field: 'duration_ms', unit: 'ms' }, 
+    { title: 'Danceability', field: 'danceability' }, 
+    { title: 'Energy', field: 'energy' }, 
+    { title: 'Popularity', field: 'popularity' }, 
+    { title: 'Key', field: 'key' }, 
+    { title: 'Loudness', field: 'loudness', unit: 'dB' }, 
+    { title: 'Speechiness', field: 'speechiness' }, 
+    { title: 'Acousticness', field: 'acousticness' }, 
+    { title: 'Instrumentalness', field: 'instrumentalness' }, 
+    { title: 'Liveness', field: 'liveness' }, 
+    { title: 'Valence', field: 'valence' }, 
+    { title: 'Tempo', field: 'tempo', unit: 'BPM' }, 
+    { title: 'Time Signature', field: 'time_signature' },
+    // { title: 'Genre', field: 'genre' },
+    { title: 'Year', field: 'release_year' }
 ];
 
 const aggregateAttributesByYear = async (startYear, endYear) => {
@@ -43,13 +45,12 @@ const aggregateAttributesByYear = async (startYear, endYear) => {
   for (let f of AGGREGATION_FIELDS) {
     for (let o of [MIN, MAX, AVG]) {
       const operation = {};
-      operation["$" + o] = "$" + f;
-      $group[`${o}_${f}`] = operation;
+      operation["$" + o] = "$" + f.field;
+      $group[`${o}_${f.field}`] = operation;
     }
   }
   $group.count = { $sum: 1 };
   const pipeline = [
-    { $match },
     { $group },
     {
       $project: {
@@ -57,16 +58,23 @@ const aggregateAttributesByYear = async (startYear, endYear) => {
       },
     },
   ];
+  if (startYear || endYear) {
+      pipeline.unshift({ $match });
+  }
+  
   const collection = db.collection(COLLECTION);
   const aggregationResult = await collection.aggregate(pipeline).toArray();
+  //console.log('aggregationResult:', aggregationResult);
+  
   const formattedAggregationResult = {};
   for (let f of AGGREGATION_FIELDS) {
-    formattedAggregationResult[f] = {};
+    formattedAggregationResult[f.field] = Object.assign({}, f);
     for (let o of [MIN, MAX, AVG]) {
-      formattedAggregationResult[f][o] = aggregationResult[0][`${o}_${f}`];
+      formattedAggregationResult[f.field][o] = aggregationResult[0][`${o}_${f.field}`];
     }
     formattedAggregationResult.count = aggregationResult[0].count;
   }
+  
   return formattedAggregationResult;
 };
 
@@ -141,33 +149,83 @@ router.get("/", async (req, res) => {
   return res.send(results);
 });
 
-router.get("/aggregation/:start/:end", async (req, res) => {
-  const startYear = parseInt(req.params.start);
-  const endYear = parseInt(req.params.end);
-  if (!startYear && !endYear) {
-    return req.sendStatus(400);
-  }
+router.get("/aggregation/", async (req, res) => {
+  const startYear = parseInt(req.query.start);
+  const endYear = parseInt(req.query.end);
 
-  const formattedAggregationResult = await aggregateAttributesByYear(
-    startYear,
-    endYear
-  );
+  const formattedAggregationResult = await aggregateAttributesByYear(startYear, endYear);
   return res.send(formattedAggregationResult);
 });
 
+router.get("/aggregation-by-year/", async (req, res) => {
+    const attr = req.query.attribute || 'liveness';
+    const startYear = parseInt(req.query.start);
+    const endYear = parseInt(req.query.end);
+    
+    const $match = { release_year: {} };
+    if (startYear) {
+        $match.release_year.$gte = startYear;
+    }
+    if (endYear) {
+        $match.release_year.$lte = endYear;
+    }
+    
+    const pipeline = [
+        { 
+            $group: {
+                _id: "$release_year", 
+                avg: { $avg: '$' + attr }
+            }
+        }, 
+        { 
+            $project: {
+                _id: 0, 
+                year: '$_id', 
+                avg: 1
+            }
+        }, 
+        {
+            $sort: { year: 1 }
+        }
+    ];
+    if (startYear || endYear) {
+        pipeline.unshift({ $match });
+    }
+    
+    const db = await mongoUtil.getDb();
+    const collection = db.collection(COLLECTION);
+    const result = await collection.aggregate(pipeline).toArray();
+    return res.send(result);
+});
+
 router.get("/top-songs/", async (req, res) => {
-  const startYear = parseInt(req.query.start_year);
-  const endYear = parseInt(req.query.end_year);
+  const startYear = parseInt(req.query.start);
+  const endYear = parseInt(req.query.end);
+  const currentAttr = req.query.attribute;
   let limit = parseInt(req.query.limit);
   if (!limit) {
     limit = 100;
   }
+  
   const $match = { release_year: {} };
   if (startYear) {
     $match.release_year.$gte = startYear;
   }
   if (endYear) {
     $match.release_year.$lte = endYear;
+  }
+  
+  const $project = {
+      id: 1,
+      name: 1, 
+      release_date: 1,
+      release_year: 1,
+      genre: "$key",  // temp fix
+      popularity: 1, 
+      artists: 1
+  };
+  if (currentAttr) {
+      $project[currentAttr] = 1;
   }
 
   const pipeline = [
@@ -184,9 +242,14 @@ router.get("/top-songs/", async (req, res) => {
       },
     },
   ];
+  
   if (startYear || endYear) {
-    pipeline.unshift({ $match });
+      pipeline.unshift({ $match });
   }
+  if (currentAttr) {
+      pipeline.push({ $project });
+  }
+  
   const db = await mongoUtil.getDb();
   const results = await db
     .collection(COLLECTION)

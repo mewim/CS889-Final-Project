@@ -73,6 +73,7 @@ export default {
   name: "TimelineView",
   data() {
     return {
+        rendered: false,
         attributes: [],
         songsData: [],
         currentAttr: 'danceability',
@@ -88,9 +89,13 @@ export default {
   mounted: async function () {},
   methods: {
     tabLoaded: async function () {
+      if (this.rendered) {
+        return;
+      }
       await this.loadInitialData();
       this.plotView();
       this.loadSongsData(0);
+      this.rendered = true;
     },
     
     getAttributeAggregations: function (startYear, endYear) {

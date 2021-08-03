@@ -54,7 +54,7 @@ $padding: 8px;
 
 .nav-item:first-child > a {
   color: black !important;
-  font-family: fantasy;
+  font-family: "Style Script";
   font-weight: bold;
 }
 

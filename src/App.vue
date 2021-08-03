@@ -2,7 +2,8 @@
 <template>
   <div id="app">
     <div>
-      <b-tabs content-class="mt-3" v-model="tabIndex">
+      <b-card no-body>
+      <b-tabs card content-class="mt-3" v-model="tabIndex">
         <b-tab title="Spotify Viz" disabled></b-tab>
         <b-tab title="Similarity"><SimilarityView ref="1" /></b-tab>
         <b-tab title="Collaboration Network"
@@ -11,6 +12,7 @@
         <b-tab title="Timeline"><TimelineView ref="3" /></b-tab>
         <b-tab title="Search"><SearchView ref="4" /></b-tab>
       </b-tabs>
+      </b-card>
     </div>
   </div>
 </template>
@@ -32,6 +34,10 @@ export default {
   },
   data() {
     return { tabIndex: 1 };
+  },
+  mounted: function() {
+    const component = this.$refs[String(1)];
+    component.tabLoaded();
   },
   watch: {
     tabIndex: function () {

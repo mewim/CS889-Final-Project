@@ -22,6 +22,11 @@
             </b-card-text>
             <div v-show="selectedSong.url">
                 <iframe
+                    allowfullscreen="allowfullscreen"
+                    mozallowfullscreen="mozallowfullscreen" 
+                    msallowfullscreen="msallowfullscreen" 
+                    oallowfullscreen="oallowfullscreen" 
+                    webkitallowfullscreen="webkitallowfullscreen"
                     type="text/html"
                     style="width:310px;height:180px;"
                     :src="selectedSong.url"
@@ -68,6 +73,7 @@ export default {
   name: "TimelineView",
   data() {
     return {
+        rendered: false,
         attributes: [],
         songsData: [],
         currentAttr: 'danceability',
@@ -83,9 +89,13 @@ export default {
   mounted: async function () {},
   methods: {
     tabLoaded: async function () {
+      if (this.rendered) {
+        return;
+      }
       await this.loadInitialData();
       this.plotView();
       this.loadSongsData(0);
+      this.rendered = true;
     },
     
     getAttributeAggregations: function (startYear, endYear) {

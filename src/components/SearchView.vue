@@ -11,7 +11,7 @@
           variant="success"
           class="search-button"
           v-on:click="searchButtonClicked()"
-          >Seach</b-button
+          >Search</b-button
         >
       </div>
     </div>

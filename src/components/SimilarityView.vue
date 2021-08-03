@@ -280,7 +280,7 @@ export default {
           return (d.p >= (140 - p(d3.event.transform.k))) ? "inline" : "none" 
         });
         if (vueinstance.currSelected && vueinstance.currSelected != -1) {
-          d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke-width", 3*d3.event.transform.k);
+          d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke-width", 3); //*d3.event.transform.k);
         }
       }
     },

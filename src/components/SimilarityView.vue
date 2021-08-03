@@ -105,6 +105,9 @@ export default {
     d3.select("#spinner").style("left", (this.width/2-128).toString()+"px")
       .style("top", (this.height/2-128).toString()+"px")
       .style("display", "inline");
+    // use event bus for this? (todo)
+    d3.select("#spinner2").style("left", (this.width/2-128).toString()+"px")
+      .style("top", (this.height/2-128).toString()+"px");
   },
   created: async function () {},
   methods: {

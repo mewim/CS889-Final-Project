@@ -1,6 +1,11 @@
 <template>
-  <div>
-    <svg id="collaboration-network-demo"></svg>
+  <div id="collaboration-network-view">
+    <div id="spinner2" style="position: absolute; width:fit-content;height:fit-content;z-index:6; display:none;">
+      <b-card style="width: 15em;" class="mb-2">
+        <img src="/loading2.gif" style="width:12.5em;"/>
+      </b-card>
+    </div>
+    <svg id="collaboration-network-demo" style="position:absolute;"></svg>
   </div>
 </template>
 
@@ -25,17 +30,26 @@ export default {
       if (this.rendered) {
         return;
       }
-      await this.loadData();
+      d3.select("#spinner2").style("display", "inline");
+      console.log("setting");
+      await this.loadData("60fb73f6a8b65b7b2d9153df");
+      console.log("unsetting");
+      d3.select("#spinner2").style("display", "none");
       this.drawNodeLinkDiagram();
       this.rendered = true;
     },
 
-    loadData: async function () {
+    reload: async function(id) {
+      d3.select("#collaboration-network-demo").html("");
+      d3.select("#spinner2").style("display", "inline");
+      await this.loadData(id);
+      d3.select("#spinner2").style("display", "none");
+      this.drawNodeLinkDiagram();
+    },
+
+    loadData: async function (id) {
       // Hard-coded artist for now: Eminem
-      const apiResult = await this.getCollaborationNetworkByArtist(
-        "60fb73f6a8b65b7b2d9153df",
-        2
-      );
+      const apiResult = await this.getCollaborationNetworkByArtist(id, 2);
       const edges = apiResult.relationships;
       const nodes = apiResult.artists;
       for (let i = 0; i < nodes.length; ++i) {
@@ -93,8 +107,10 @@ export default {
       const drag = (simulation) => {
         function dragstarted(event) {
           if (!event.active) simulation.alphaTarget(0.3).restart();
-          event.subject.fx = event.subject.x;
-          event.subject.fy = event.subject.y;
+          if (event.subject) {
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+          }
         }
 
         function dragged(event) {
@@ -104,8 +120,10 @@ export default {
 
         function dragended(event) {
           if (!event.active) simulation.alphaTarget(0);
-          event.subject.fx = null;
-          event.subject.fy = null;
+          if (event.subject) {
+            event.subject.fx = null;
+            event.subject.fy = null;
+          }
         }
 
         return d3
@@ -124,6 +142,7 @@ export default {
         .join("line")
         .attr("stroke-width", (d) => Math.sqrt(d.value));
 
+      var vueinstance = this;
       const node = svg
         .append("g")
         .attr("stroke", "#fff")
@@ -133,7 +152,8 @@ export default {
         .join("circle")
         .attr("r", 5)
         .attr("fill", "#66ccff")
-        .call(drag(simulation));
+        .call(drag(simulation))
+        .on("click", function (d) {vueinstance.reload(d.id);});
 
       node.append("title").text((d) => `${d.name}\n${d.genres.join(", ")}`);
       link.append("title").text((d) => `${d.count} collaborations`);

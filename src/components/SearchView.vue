@@ -42,6 +42,11 @@
           :src="currentSongUrl"
           frameborder="0"
           allow="autoplay"
+          allowfullscreen="allowfullscreen"
+          mozallowfullscreen="mozallowfullscreen" 
+          msallowfullscreen="msallowfullscreen" 
+          oallowfullscreen="oallowfullscreen" 
+          webkitallowfullscreen="webkitallowfullscreen"
         ></iframe>
         <div class="text-center">
           <b-button variant="danger" v-on:click="currentSongUrl = ''"

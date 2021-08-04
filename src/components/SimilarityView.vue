@@ -225,7 +225,8 @@ export default {
         d3.select("#nearby-card").style("display", "inline");
         d3.select("#nearby-progress").style("display", "inline");
         d3.select(".circ-"+vueinstance.currSelected.toString())
-          .style("stroke-width", 3*vueinstance.scale).style("stroke", "black");
+          .style("stroke-width", 3) //*vueinstance.scale)
+          .style("stroke", "black");
         processNearbySongs(d, vueinstance);
         const params = new URLSearchParams([["name", d.name+" "+d.artists]]);
         const results = await axios

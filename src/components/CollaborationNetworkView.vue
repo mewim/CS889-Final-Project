@@ -1,5 +1,20 @@
 <template>
   <div id="collaboration-network-view">
+    <div id="artist-songs-card" 
+      style="position:absolute;width:fit-content;height:fit-content;display: none; z-index: 4;">
+      <b-card style="width: 30em;background-color:#f8f8f8;" class="mb-2">
+        <b-card-title id="artist-songs-title" style="text-transform: capitalize;">
+          Songs of this Artist
+        </b-card-title>
+        <b-card-text id="artist-songs-body" style="text-transform: capitalize;">
+          <ul>
+            <li v-for="item in songs" v-bind:key="item.song">
+              {{ item.song }}
+            </li>
+          </ul>
+        </b-card-text>
+      </b-card>
+    </div>
     <div id="artist-card" 
       style="position:absolute;bottom:0px;padding-bottom:1.25rem;width:fit-content;height:fit-content;display: none; z-index: 5;">
       <b-card style="width: 30rem;background-color:#f8f8f8;" class="mb-2">
@@ -7,9 +22,15 @@
           Card Title
         </b-card-title>
         <b-card-text id="artist-body">
-          <b>Genres</b>
+          <b>Genres of this artist:</b>
           <ul>
             <li v-for="item in genres" v-bind:key="item.genre">
+              <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)">{{ item.genre }}</a>
+            </li>
+          </ul>
+          <b>Other genres in this graph:</b>
+          <ul>
+            <li v-for="item in genres2" v-bind:key="item.genre">
               <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)">{{ item.genre }}</a>
             </li>
           </ul>
@@ -41,6 +62,8 @@ export default {
       rendered: false,
       maxCount: -1,
       genres: [],
+      genres2: [],
+      songs: [],
       currId: null,
     };
   },
@@ -50,6 +73,7 @@ export default {
       if (this.rendered) {
         return;
       }
+      d3.select("#artist-songs-card").style("display", "none");
       d3.select("#artist-card").style("display", "none");
       d3.select("#spinner2").style("display", "inline");
       console.log("setting");
@@ -58,18 +82,21 @@ export default {
       console.log("unsetting");
       d3.select("#spinner2").style("display", "none");
       d3.select("#artist-card").style("display", "inline");
+      d3.select("#artist-songs-card").style("display", "inline");
       this.drawNodeLinkDiagram("60fb73f6a8b65b7b2d9153df");
       this.rendered = true;
     },
 
     reload: async function(id) {
       d3.select("#collaboration-network-demo").html("");
+      d3.select("#artist-songs-card").style("display", "none");
       d3.select("#artist-card").style("display", "none");
       d3.select("#spinner2").style("display", "inline");
       this.currId = id;
       await this.loadData(id);
       d3.select("#spinner2").style("display", "none");
       d3.select("#artist-card").style("display", "inline");
+      d3.select("#artist-songs-card").style("display", "inline");
       this.drawNodeLinkDiagram(id);
     },
 
@@ -82,9 +109,9 @@ export default {
         .data(this.graphData.nodes)
         .join("circle")
         .attr("fill", function (d) {
-          if (item != null && d.genres.includes(item.genre)) {console.log('a'); return "#00cc00";}
-          console.log('b');
-          return d.id==vueinstance.currId ? "#2d2d2d" : scale(Math.sqrt(d.count));
+          if (d.id==vueinstance.currId) {return "#2d2d2d";}
+          if (item != null && d.genres.includes(item.genre)) {return "#00cc00";}
+          return scale(Math.sqrt(d.count));
         });
     },
 
@@ -93,14 +120,36 @@ export default {
       const apiResult = await this.getCollaborationNetworkByArtist(id, 2);
       const edges = apiResult.relationships;
       const nodes = apiResult.artists;
+      this.genres2 = [];
+      var othergenres = {};
       for (let i = 0; i < nodes.length; ++i) {
         nodes[i].id = nodes[i]._id;
         if (nodes[i].id == id) {
           // eslint-disable-next-line no-unused-labels
           this.genres = nodes[i].genres.map((k) => {return {genre: k};});
           d3.select("#artist-title").text(nodes[i].name);
+        } else {
+          for (let j = 0; j < nodes[i].genres.length; ++j) {
+            if (!(nodes[i].genres[j] in othergenres)) {
+              othergenres[nodes[i].genres[j]] = 0;
+            }
+            othergenres[nodes[i].genres[j]]++;
+          }
         }
       }
+      var othergenreslist = Object.keys(othergenres).map(function(key) {
+        return [key, othergenres[key]];
+      });
+      othergenreslist.sort(function(first, second) {
+        return second[1] - first[1];
+      });
+      var artistgenres = this.genres.map((k) => k.genre);
+      for (let j = 0; j < othergenreslist.length; ++j) {
+        if (!artistgenres.includes(othergenreslist[j][0])) {
+          this.genres2.push({genre: othergenreslist[j][0]});
+        }
+      }
+      this.genres2 = this.genres2.slice(0, 12-this.genres.length);
       var connections = {};
       for (let i = 0; i < edges.length; ++i) {
         edges[i].source = edges[i].artist_1;
@@ -119,6 +168,12 @@ export default {
       }
       this.graphData.nodes = nodes;
       this.graphData.edges = edges;
+      // retreive songs
+      const result = await axios
+        .get(`/api/track/artist/${id}`, {})
+        .then((res) => res.data);
+      this.songs = result.map((k) => {return {song: k.name};});
+      this.songs = this.songs.slice(0, 5);
     },
 
     getCollaborationNetworkByArtist: function (pivotId, depth, fetchAllEdges) {

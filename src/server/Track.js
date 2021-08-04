@@ -338,4 +338,27 @@ router.get("/combination/:a/:b", async (req, res) => {
   res.send(documents);
 });
 
+router.get("/artist/:id", async (req, res) => {
+  const db = await mongoUtil.getDb();
+  const documents = await db.collection("tracks")
+    .aggregate([
+    {
+      '$match': {
+        'artists_id': {
+          '$elemMatch': {
+            '$eq': new ObjectId(req.params.id),
+          }
+        }
+      },
+    },
+    {
+      '$sort': {'popularity': -1},
+    },
+    {
+      '$limit': 10,
+    },
+  ]).toArray();
+  res.send(documents);
+});
+
 module.exports = router;

@@ -155,6 +155,12 @@ export default {
             .then((res) => res.data);
     },
     
+    getSong: function (songId) {
+        return axios
+            .get(`/api/track/${songId}`)
+            .then((res) => res.data);
+    },
+    
     loadInitialData: async function () {
         let result = await this.getAttributeAggregations();
         //console.log('Attributes aggregations results:', result);
@@ -177,7 +183,7 @@ export default {
         this.currentAttrAggs = aggresult;
     },
     
-    loadSongsData: function (serverRequestDelay) {
+    loadSongsData: function (serverRequestDelay, songId) {
         if (this.serverRequest) {
             //console.log('server request already underway!');
             return;
@@ -198,13 +204,32 @@ export default {
             
             const result = await self.getTopSongs(startYear, endYear, songsLimit, self.currentAttr);
             //console.log('Songs data from server:', result);
+            let defaultSong = null;
             self.songsData = result.filter((s) => {
                 s.release_date = new Date(s.release_date);
+                if (songId && (s._id == songId))
+                    defaultSong = s;
                 if ((s.release_date < self.startDate) || (s.release_date > self.endDate))
                     return false;
                 return true;
             });
+            
+            if (songId && !defaultSong) {
+                console.log('Default song with id ' + songId + ' needs to be downloaded separately!');
+                defaultSong = await self.getSong(songId);
+                console.log('Default song:', defaultSong);
+                if (defaultSong) {
+                    defaultSong.release_date = new Date(defaultSong.release_date);
+                    self.songsData.push(defaultSong);
+                } 
+            }
+            else if (songId) {
+                console.log('Default song with id ' + defaultSong._id + ' already among top songs!');
+            }
+            
             self.plotSongs();
+            if (defaultSong)
+                self.selectSong(defaultSong);
             
         }, serverRequestDelay)
     },
@@ -243,6 +268,31 @@ export default {
         this.loadSongsData(0);
     },
     
+    selectSong: async function (song) {
+        console.log('Selecting song', song);
+        const prevId = (this.selectedSong || {})._id; 
+        if (prevId) {
+            if (song._id == prevId) {
+                return;
+            }
+            else {
+                d3.select("#song_" + prevId)
+                    .style("fill", colorScale(song.genre));
+                this.selectedSong = {};
+            }
+        }
+        
+        d3.select("#song_" + song._id)
+            .style("fill", "black");
+            
+        this.selectedSong = Object.assign({}, song);
+        this.selectedSong.artistStr = song.artists.map(a => a.name).join(', ');
+        
+        const result = await this.getSongYoutubeUrl(song._id);
+        this.selectedSong.url = (result || {}).url;
+        this.$forceUpdate();
+    }, 
+    
     plotView: function () {
         const attrInfo = this.attributes[this.currentAttr];
         let parentDiv = document.getElementById("timeline_container");
@@ -268,7 +318,7 @@ export default {
             //.style("background-color", "white")
             .style("border-radius", "5px")
             .style("padding", "10px")
-            .style("color", "#555")
+            .style("color", "#333")
             .style("max-width", "400px")
             .style("text-align", "left")
             .style("font-size", "13px");
@@ -305,7 +355,7 @@ export default {
             .on("brush end", brushedCallback);
 
         const zoom = d3.zoom()
-            .scaleExtent([1, 8])  // can set the minimum higher than 1 to prevent further unzooming
+            .scaleExtent([1, 10])  // can set the minimum higher than 1 to prevent further unzooming
             .translateExtent([[0, 0], [focusWidth, focusHeight]])
             .extent([[0, 0], [focusWidth, focusHeight]])
             .on("zoom", zoomedCallback);
@@ -409,7 +459,6 @@ export default {
             songDots = null;
         }
         
-        let self = this;
         songDots = d3.select(".focus")
             .append("g")
             .selectAll("dot")
@@ -443,29 +492,7 @@ export default {
                     .style("visibility", "hidden")
                     .html("");
             })
-            .on("click", async function(d) {
-                const prevId = (self.selectedSong || {})._id; 
-                if (prevId) {
-                    if (d._id == prevId) {
-                        return;
-                    }
-                    else {
-                        d3.select("#song_" + prevId)
-                            .style("fill", colorScale(d.genre));
-                        self.selectedSong = {};
-                    }
-                }
-                
-                d3.select(this)
-                    .style("fill", "black");
-                    
-                self.selectedSong = Object.assign({}, d);
-                self.selectedSong.artistStr = d.artists.map(a => a.name).join(', ');
-                
-                const result = await self.getSongYoutubeUrl(d._id);
-                self.selectedSong.url = (result || {}).url;
-                self.$forceUpdate();
-            });
+            .on("click", this.selectSong);
     }
   },
 };

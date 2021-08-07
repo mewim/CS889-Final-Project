@@ -290,9 +290,33 @@ router.get("/:id", async (req, res) => {
   if (!mongodb.ObjectId.isValid(id)) {
     return res.sendStatus(400);
   }
-  const document = await db.collection(COLLECTION).findOne({
+  
+  /*const document = await db.collection(COLLECTION).findOne({
     _id: ObjectId(id),
-  });
+  });*/
+  
+  const pipeline = [
+      {
+        $match: {
+          _id: ObjectId(id)
+        }
+      },
+      {
+        $lookup: {
+          from: "artists",
+          localField: "artists_id",
+          foreignField: "_id",
+          as: "artists",
+        }
+      }
+  ];
+  
+  const results = await db
+    .collection(COLLECTION)
+    .aggregate(pipeline)
+    .toArray();
+  
+  const document = results[0];
   if (!document) {
     return res.sendStatus(404);
   }

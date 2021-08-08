@@ -98,13 +98,13 @@ export default {
   },
   mounted: async function () {},
   methods: {
-    tabLoaded: async function () {
+    tabLoaded: async function (songId) {
       if (this.rendered) {
         return;
       }
       await this.loadInitialData();
       this.plotView();
-      this.loadSongsData(0);
+      this.loadSongsData(0, songId);
       this.rendered = true;
     },
     

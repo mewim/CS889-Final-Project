@@ -2,7 +2,7 @@
   <div id="collaboration-network-view">
     <div id="artist-songs-card" 
       style="position:absolute;width:fit-content;height:fit-content;display: none; z-index: 4;">
-      <b-card style="width: 30em;background-color:#f8f8f8;" class="mb-2">
+      <b-card style="width: 30em;background-color:#f8f8f8;max-height:40vh;overflow-y:auto;" class="mb-2">
         <b-card-title id="artist-songs-title" style="text-transform: capitalize;">
           Songs of this Artist
         </b-card-title>
@@ -17,7 +17,7 @@
     </div>
     <div id="artist-card" 
       style="position:absolute;bottom:0px;padding-bottom:1.25rem;width:fit-content;height:fit-content;display: none; z-index: 5;">
-      <b-card style="width: 30rem;background-color:#f8f8f8;" class="mb-2">
+      <b-card style="width: 30rem;background-color:#f8f8f8;max-height: 55vh; overflow-y:auto;" class="mb-2">
         <b-card-title id="artist-title" style="text-transform: capitalize;">
           Card Title
         </b-card-title>
@@ -35,6 +35,7 @@
             </li>
           </ul>
           <b-button v-on:click="highlightGenres(null)">Reset</b-button>
+          <br><br>
         </b-card-text>
       </b-card>
     </div>
@@ -297,5 +298,6 @@ export default {
 #collaboration-network-demo {
   min-width: 100%;
   min-height: 100%;
+  padding-left: 20%;
 }
 </style>

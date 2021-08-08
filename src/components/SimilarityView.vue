@@ -2,7 +2,7 @@
   <div id="similarity-view" style="width:100%;height:100%;">
     <div id="song-card" 
       style="position:absolute;bottom:0px;padding-bottom:1.25rem;width:fit-content;height:fit-content;display: none; z-index: 5;">
-      <b-card style="width: 30rem;background-color:#f8f8f8;" class="mb-2">
+      <b-card style="width: 30rem;background-color:#f8f8f8;max-height: 40vh; overflow-y:auto;" class="mb-2">
         <b-card-title id="song-title" style="text-transform: capitalize;">
           Card Title
         </b-card-title>
@@ -14,7 +14,6 @@
           style="width:27.5em;height:15.46em;"
           :src="currentSongUrl"
           frameborder="0"
-          allow="autoplay"
           allowfullscreen="allowfullscreen"
           mozallowfullscreen="mozallowfullscreen" 
           msallowfullscreen="msallowfullscreen" 
@@ -26,7 +25,7 @@
     </div>
     <div id="nearby-card" 
       style="position:absolute;width:fit-content;height:fit-content;display: none; z-index: 4;">
-      <b-card style="width: 30em;background-color:#f8f8f8;" class="mb-2">
+      <b-card style="width: 30em;background-color:#f8f8f8;max-height: 50vh; overflow-y:auto;" class="mb-2">
         <b-card-title id="nearby-title" style="text-transform: capitalize;">
           Nearby Songs
         </b-card-title>

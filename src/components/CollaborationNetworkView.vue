@@ -298,6 +298,6 @@ export default {
 #collaboration-network-demo {
   min-width: 100%;
   min-height: 100%;
-  margin-left: 20%;
+  padding-left: 20%;
 }
 </style>

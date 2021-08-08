@@ -18,16 +18,26 @@
 
     <div class="search-results-player-container">
       <div class="serach-results-container" v-show="isSearchResultsShown">
-        <b-card
-          v-for="track in results"
-          :key="track._id"
-          :title="track.name"
-          :sub-title="formatDuration(track.duration_ms)"
-        >
+        <b-card v-for="track in results" :key="track._id">
+          <h4 class="card-title">
+            <a href="#" @click.prevent="jumpToSimilarity(track._id)">{{
+              track.name
+            }}</a>
+          </h4>
+          <h6 class="card-subtitle text-muted mb-2">
+            {{ formatDuration(track.duration_ms) }}
+          </h6>
           <b-card-text>
-            {{ track.original_artists.join(", ") }} ({{
+            <span v-for="(artist, key) in track.artists" :key="key">
+              <a href="#" @click.prevent="jumpToCollaboration(artist._id)">{{
+                artist.name
+              }}</a
+              ><span v-if="key + 1 !== track.artists.length">, </span>
+            </span>
+            (<a href="#" @click.prevent="jumpToTimeline(track._id)">{{
               String(track.release_year)
-            }})
+            }}</a
+            >)
           </b-card-text>
           <a href="#" @click.prevent="playTrack(track._id)" class="card-link"
             >Play on YouTube</a
@@ -43,9 +53,9 @@
           frameborder="0"
           allow="autoplay"
           allowfullscreen="allowfullscreen"
-          mozallowfullscreen="mozallowfullscreen" 
-          msallowfullscreen="msallowfullscreen" 
-          oallowfullscreen="oallowfullscreen" 
+          mozallowfullscreen="mozallowfullscreen"
+          msallowfullscreen="msallowfullscreen"
+          oallowfullscreen="oallowfullscreen"
           webkitallowfullscreen="webkitallowfullscreen"
         ></iframe>
         <div class="text-center">
@@ -61,6 +71,8 @@
 <script>
 import axios from "axios";
 import moment from "moment";
+import EventBus from "../EventBus";
+import Events from "../Events";
 
 export default {
   name: "SearchView",
@@ -94,6 +106,15 @@ export default {
       const res = await axios.get(`/api/track/${trackId}/youtube-url`);
       const url = res.data.url;
       this.currentSongUrl = url;
+    },
+    jumpToTimeline: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_TIMELINE, trackId);
+    },
+    jumpToCollaboration: function (artistId) {
+      EventBus.$emit(Events.JUMP_TO_COLLABORATION, artistId);
+    },
+    jumpToSimilarity: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
     },
   },
 

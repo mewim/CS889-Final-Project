@@ -70,21 +70,20 @@ export default {
   },
   mounted: async function () {},
   methods: {
-    tabLoaded: async function () {
-      if (this.rendered) {
+    tabLoaded: async function (newArtistId="60fb73f6a8b65b7b2d9153df") {
+      if (this.rendered && this.currId === newArtistId) {
         return;
       }
+      this.currId = newArtistId;
       d3.select("#artist-songs-card").style("display", "none");
       d3.select("#artist-card").style("display", "none");
       d3.select("#spinner2").style("display", "inline");
       console.log("setting");
-      this.currId = "60fb73f6a8b65b7b2d9153df";
-      await this.loadData("60fb73f6a8b65b7b2d9153df");
+      await this.reload(this.currId);
       console.log("unsetting");
       d3.select("#spinner2").style("display", "none");
       d3.select("#artist-card").style("display", "inline");
       d3.select("#artist-songs-card").style("display", "inline");
-      this.drawNodeLinkDiagram("60fb73f6a8b65b7b2d9153df");
       this.rendered = true;
     },
 

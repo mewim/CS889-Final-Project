@@ -78,7 +78,6 @@ router.get("/", async (req, res) => {
       },
     })
     .toArray();
-  console.log(results);
   res.send({ artists, relationships: results });
 });
 

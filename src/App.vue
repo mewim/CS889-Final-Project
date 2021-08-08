@@ -3,15 +3,15 @@
   <div id="app">
     <div>
       <b-card no-body>
-      <b-tabs card content-class="mt-3" v-model="tabIndex">
-        <b-tab title="Spotify Viz" disabled></b-tab>
-        <b-tab title="Similarity"><SimilarityView ref="1" /></b-tab>
-        <b-tab title="Collaboration Network"
-          ><CollaborationNetworkView ref="2"
-        /></b-tab>
-        <b-tab title="Timeline"><TimelineView ref="3" /></b-tab>
-        <b-tab title="Search"><SearchView ref="4" /></b-tab>
-      </b-tabs>
+        <b-tabs card content-class="mt-3" v-model="tabIndex">
+          <b-tab title="Spotify Viz" disabled></b-tab>
+          <b-tab title="Similarity"><SimilarityView ref="1" /></b-tab>
+          <b-tab title="Collaboration Network"
+            ><CollaborationNetworkView ref="2"
+          /></b-tab>
+          <b-tab title="Timeline"><TimelineView ref="3" /></b-tab>
+          <b-tab title="Search"><SearchView ref="4" /></b-tab>
+        </b-tabs>
       </b-card>
     </div>
   </div>
@@ -23,6 +23,8 @@ import SimilarityView from "./components/SimilarityView.vue";
 import CollaborationNetworkView from "./components/CollaborationNetworkView.vue";
 import TimelineView from "./components/TimelineView.vue";
 import SearchView from "./components/SearchView.vue";
+import EventBus from "./EventBus";
+import Events from "./Events";
 
 export default {
   name: "App",
@@ -33,16 +35,36 @@ export default {
     SearchView,
   },
   data() {
-    return { tabIndex: 1 };
+    return { tabIndex: 1, nextTabProperty: undefined };
   },
-  mounted: function() {
+  methods: {
+    setupEventHandlers: function () {
+      EventBus.$on(Events.JUMP_TO_TIMELINE, this.jumpToTimeline);
+      EventBus.$on(Events.JUMP_TO_COLLABORATION, this.jumpToCollaboration);
+      EventBus.$on(Events.JUMP_TO_SIMILARITY, this.jumpToSimilarity);
+    },
+    jumpToTimeline: function (trackId) {
+      this.nextTabProperty = trackId;
+      this.tabIndex = 3;
+    },
+    jumpToCollaboration: function (artistId) {
+      this.nextTabProperty = artistId;
+      this.tabIndex = 2;
+    },
+    jumpToSimilarity: function (trackId) {
+      this.nextTabProperty = trackId;
+      this.tabIndex = 1;
+    },
+  },
+  mounted: function () {
+    this.setupEventHandlers();
     const component = this.$refs[String(1)];
     component.tabLoaded();
   },
   watch: {
     tabIndex: function () {
       const component = this.$refs[String(this.tabIndex)];
-      component.tabLoaded();
+      component.tabLoaded(this.nextTabProperty);
     },
   },
 };

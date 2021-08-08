@@ -17,7 +17,7 @@
     </div>
     <div id="artist-card" 
       style="position:absolute;bottom:0px;padding-bottom:1.25rem;width:fit-content;height:fit-content;display: none; z-index: 5;">
-      <b-card style="width: 30rem;background-color:#f8f8f8;max-height: 50vh; overflow-y:auto;" class="mb-2">
+      <b-card style="width: 30rem;background-color:#f8f8f8;max-height: 55vh; overflow-y:auto;" class="mb-2">
         <b-card-title id="artist-title" style="text-transform: capitalize;">
           Card Title
         </b-card-title>
@@ -298,5 +298,6 @@ export default {
 #collaboration-network-demo {
   min-width: 100%;
   min-height: 100%;
+  margin-left: 20%;
 }
 </style>

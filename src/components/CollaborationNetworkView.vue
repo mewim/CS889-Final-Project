@@ -74,16 +74,7 @@ export default {
       if (this.rendered && this.currId === newArtistId) {
         return;
       }
-      this.currId = newArtistId;
-      d3.select("#artist-songs-card").style("display", "none");
-      d3.select("#artist-card").style("display", "none");
-      d3.select("#spinner2").style("display", "inline");
-      console.log("setting");
-      await this.reload(this.currId);
-      console.log("unsetting");
-      d3.select("#spinner2").style("display", "none");
-      d3.select("#artist-card").style("display", "inline");
-      d3.select("#artist-songs-card").style("display", "inline");
+      await this.reload(newArtistId);
       this.rendered = true;
     },
 

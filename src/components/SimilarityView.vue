@@ -14,7 +14,8 @@
           </span><br>
           <b>Release:</b> <a href="#" @click.prevent="jumpToTimeline(track.songId)">
             {{ String(track.date) }}
-          </a>
+          </a><br>
+          <b>Genre:</b> {{ String(track.genre) }}
         </b-card-text>
         <iframe
           type="text/html"
@@ -97,6 +98,7 @@ import * as stringSimilarity from "string-similarity";
 import * as clustering from "density-clustering";
 import EventBus from "../EventBus";
 import Events from "../Events";
+import genres from "../genres";
 
 
 export default {
@@ -225,6 +227,7 @@ export default {
           id: i,
           songId: tracks[i].info._id,
           x: tracks[i].dim_1, y: tracks[i].dim_2, c: -1,
+          genre: tracks[i].info.genre,
           p: tracks[i].info.popularity,
           name: tracks[i].info.name,
           artists: artists,
@@ -249,7 +252,6 @@ export default {
         var results = await axios
         .get(`/api/track/combinationSingle/${this.selectedAttrs.join(",")}/${newTrackId}`, {})
         .then((res) => res.data);
-        console.log('here2');
         randomIndex = tracks.length;
         results = results[0];
         var artists2 = [];
@@ -265,6 +267,7 @@ export default {
           songId: results.info._id,
           x: results.dim_1, y: results.dim_2, c: -1,
           p: 60,
+          genre: results.info.genre,
           name: results.info.name,
           artists: artists2,
           date: results.info.release_date.split("-")[0],
@@ -282,7 +285,6 @@ export default {
         this.xMax = Math.max(this.xMax, results.dim_1);
         this.yMax = Math.max(this.yMax, results.dim_2);         
       }
-      console.log("here");
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
       var kmeans = new clustering.KMEANS();
@@ -504,7 +506,7 @@ export default {
       .attr("r", 5)
       .attr("data-popularity", function(d) { return d.p })
       .attr("data-cluster", function(d) { return d.c })
-      .style("fill", function (d) { return c((d.c)/9.0) })
+      .style("fill", function (d) { return c((genres.indexOf(d.genre)/31.0)) })
       .style("opacity", Math.random()*0.3+0.4)
       .attr("display", function(d) { return (d.p >= 140 - p(1.0)) ? "inline" : "none" })
       .on("click", async function(d) {

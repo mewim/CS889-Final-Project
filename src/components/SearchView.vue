@@ -38,6 +38,7 @@
               String(track.release_year)
             }}</a
             >)
+            <p>{{track.genre}}</p>
           </b-card-text>
           <a href="#" @click.prevent="playTrack(track._id)" class="card-link"
             >Play on YouTube</a

@@ -102,7 +102,7 @@ $padding: 8px;
 
 .nav-item:first-child > a {
   color: black !important;
-  font-family: "Style Script";
+  font-family: 'Indie Flower', cursive;
   font-weight: bold;
 }
 

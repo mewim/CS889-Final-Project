@@ -1,22 +1,20 @@
-
 <template>
   <div id="app">
     <div>
       <b-card no-body>
         <b-tabs card content-class="mt-3" v-model="tabIndex">
           <b-tab title="Spotify Viz" disabled></b-tab>
-          <b-tab title="Similarity"><SimilarityView ref="1" /></b-tab>
+          <b-tab title="Similarity"><SimilarityView ref="1"/></b-tab>
           <b-tab title="Collaboration Network"
             ><CollaborationNetworkView ref="2"
           /></b-tab>
-          <b-tab title="Timeline"><TimelineView ref="3" /></b-tab>
-          <b-tab title="Search"><SearchView ref="4" /></b-tab>
+          <b-tab title="Timeline"><TimelineView ref="3"/></b-tab>
+          <b-tab title="Search"><SearchView ref="4"/></b-tab>
         </b-tabs>
       </b-card>
     </div>
   </div>
 </template>
-
 
 <script>
 import SimilarityView from "./components/SimilarityView.vue";
@@ -38,39 +36,52 @@ export default {
     return { tabIndex: 1, artistId: undefined, songId: undefined };
   },
   methods: {
-    setupEventHandlers: function () {
+    setupEventHandlers: function() {
       EventBus.$on(Events.JUMP_TO_TIMELINE, this.jumpToTimeline);
       EventBus.$on(Events.JUMP_TO_COLLABORATION, this.jumpToCollaboration);
       EventBus.$on(Events.JUMP_TO_SIMILARITY, this.jumpToSimilarity);
       EventBus.$on(Events.SET_SONG, this.setSong);
       EventBus.$on(Events.SET_ARTIST, this.setArtist);
+      EventBus.$on(Events.PAUSE_ALL_YOUTUBE, this.pauseAllYoutube);
     },
-    jumpToTimeline: function (songId) {
+    jumpToTimeline: function(songId) {
       this.songId = songId;
       this.tabIndex = 3;
     },
-    jumpToCollaboration: function (artistId) {
+    jumpToCollaboration: function(artistId) {
       this.artistId = artistId;
       this.tabIndex = 2;
     },
-    jumpToSimilarity: function (songId) {
+    jumpToSimilarity: function(songId) {
       this.songId = songId;
       this.tabIndex = 1;
     },
-    setSong: function (item) {
+    setSong: function(item) {
       this.songId = item;
     },
-    setArtist: function (item) {
+    setArtist: function(item) {
       this.artistId = item;
-    }
+    },
+    pauseAllYoutube: function() {
+      document.querySelectorAll("iframe").forEach((p) => {
+        try {
+          p.contentWindow.postMessage(
+            JSON.stringify({ event: "command", func: "pauseVideo" }),
+            "https://www.youtube.com"
+          );
+        } catch (_) {
+          return;
+        }
+      });
+    },
   },
-  mounted: function () {
+  mounted: function() {
     this.setupEventHandlers();
     const component = this.$refs[String(1)];
     component.tabLoaded();
   },
   watch: {
-    tabIndex: function () {
+    tabIndex: function() {
       const component = this.$refs[String(this.tabIndex)];
       if (this.tabIndex == 2) {
         component.tabLoaded(this.artistId);
@@ -83,7 +94,10 @@ export default {
 </script>
 
 <style lang="scss">
-$navbar-height: 42px;
+body {
+  overflow: hidden;
+}
+$navbar-height: 54px;
 $padding: 8px;
 
 .nav-item:first-child > a {

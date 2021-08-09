@@ -84,36 +84,37 @@ export default {
     };
   },
   methods: {
-    tabLoaded: async function () {},
+    tabLoaded: async function() {},
     formatDuration(ms) {
       return moment.utc(ms).format("mm:ss");
     },
-    searchButtonClicked: async function () {
+    searchButtonClicked: async function() {
       if (this.searchBarText.length === 0) {
         this.results = [];
         return;
       }
       this.results = await this.loadSeachResult(this.searchBarText);
     },
-    loadSeachResult: async function (keyword) {
+    loadSeachResult: async function(keyword) {
       const params = new URLSearchParams([["name", keyword]]);
       const results = await axios
         .get(`/api/track`, { params })
         .then((res) => res.data);
       return results;
     },
-    playTrack: async function (trackId) {
+    playTrack: async function(trackId) {
+      EventBus.$emit(Events.PAUSE_ALL_YOUTUBE);
       const res = await axios.get(`/api/track/${trackId}/youtube-url`);
       const url = res.data.url;
       this.currentSongUrl = url;
     },
-    jumpToTimeline: function (trackId) {
+    jumpToTimeline: function(trackId) {
       EventBus.$emit(Events.JUMP_TO_TIMELINE, trackId);
     },
-    jumpToCollaboration: function (artistId) {
+    jumpToCollaboration: function(artistId) {
       EventBus.$emit(Events.JUMP_TO_COLLABORATION, artistId);
     },
-    jumpToSimilarity: function (trackId) {
+    jumpToSimilarity: function(trackId) {
       EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
     },
   },

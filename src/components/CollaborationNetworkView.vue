@@ -51,6 +51,8 @@
 <script>
 import * as d3 from "d3";
 import axios from "axios";
+import EventBus from "../EventBus";
+import Events from "../Events";
 
 export default {
   name: "CollaborationNetworkView",
@@ -84,11 +86,16 @@ export default {
       d3.select("#artist-card").style("display", "none");
       d3.select("#spinner2").style("display", "inline");
       this.currId = id;
-      await this.loadData(id);
+      var success = await this.loadData(this.currId);
+      if (!success) {
+        this.currId = "60fb73f6a8b65b7b2d9153df";
+        await this.loadData(this.currId);
+      }
       d3.select("#spinner2").style("display", "none");
       d3.select("#artist-card").style("display", "inline");
       d3.select("#artist-songs-card").style("display", "inline");
-      this.drawNodeLinkDiagram(id);
+      this.drawNodeLinkDiagram(this.currId);
+      this.setArtist(this.currId);
     },
 
     highlightGenres: async function(item) {
@@ -109,6 +116,9 @@ export default {
     loadData: async function (id) {
       // Hard-coded artist for now: Eminem
       const apiResult = await this.getCollaborationNetworkByArtist(id, 2);
+      if (apiResult.artists.length == 0) {
+        return false;
+      }
       const edges = apiResult.relationships;
       const nodes = apiResult.artists;
       this.genres2 = [];
@@ -165,6 +175,7 @@ export default {
         .then((res) => res.data);
       this.songs = result.map((k) => {return {song: k.name};});
       this.songs = this.songs.slice(0, 5);
+      return true;
     },
 
     getCollaborationNetworkByArtist: function (pivotId, depth, fetchAllEdges) {
@@ -279,6 +290,9 @@ export default {
         node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
       });
     },
+    setArtist: function (item) {
+      EventBus.$emit(Events.SET_ARTIST, item);
+    }
   },
 };
 </script>

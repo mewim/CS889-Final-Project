@@ -9,7 +9,9 @@
         <b-card-text id="artist-songs-body" style="text-transform: capitalize;">
           <ul>
             <li v-for="item in songs" v-bind:key="item.song">
-              {{ item.song }}
+              <a href="#" @click.prevent="jumpToSimilarity(item._id)">
+                {{ item.song }}
+              </a>
             </li>
           </ul>
         </b-card-text>
@@ -51,6 +53,8 @@
 <script>
 import * as d3 from "d3";
 import axios from "axios";
+import EventBus from "../EventBus";
+import Events from "../Events";
 
 export default {
   name: "CollaborationNetworkView",
@@ -74,16 +78,7 @@ export default {
       if (this.rendered && this.currId === newArtistId) {
         return;
       }
-      this.currId = newArtistId;
-      d3.select("#artist-songs-card").style("display", "none");
-      d3.select("#artist-card").style("display", "none");
-      d3.select("#spinner2").style("display", "inline");
-      console.log("setting");
-      await this.reload(this.currId);
-      console.log("unsetting");
-      d3.select("#spinner2").style("display", "none");
-      d3.select("#artist-card").style("display", "inline");
-      d3.select("#artist-songs-card").style("display", "inline");
+      await this.reload(newArtistId);
       this.rendered = true;
     },
 
@@ -93,11 +88,16 @@ export default {
       d3.select("#artist-card").style("display", "none");
       d3.select("#spinner2").style("display", "inline");
       this.currId = id;
-      await this.loadData(id);
+      var success = await this.loadData(this.currId);
+      if (!success) {
+        this.currId = "60fb73f6a8b65b7b2d9153df";
+        await this.loadData(this.currId);
+      }
       d3.select("#spinner2").style("display", "none");
       d3.select("#artist-card").style("display", "inline");
       d3.select("#artist-songs-card").style("display", "inline");
-      this.drawNodeLinkDiagram(id);
+      this.drawNodeLinkDiagram(this.currId);
+      this.setArtist(this.currId);
     },
 
     highlightGenres: async function(item) {
@@ -118,6 +118,9 @@ export default {
     loadData: async function (id) {
       // Hard-coded artist for now: Eminem
       const apiResult = await this.getCollaborationNetworkByArtist(id, 2);
+      if (apiResult.artists.length == 0) {
+        return false;
+      }
       const edges = apiResult.relationships;
       const nodes = apiResult.artists;
       this.genres2 = [];
@@ -172,8 +175,10 @@ export default {
       const result = await axios
         .get(`/api/track/artist/${id}`, {})
         .then((res) => res.data);
-      this.songs = result.map((k) => {return {song: k.name};});
+      this.songs = result.map((k) => {return {song: k.name, _id: k._id};});
+      this.songs = [...new Set(this.songs)];
       this.songs = this.songs.slice(0, 5);
+      return true;
     },
 
     getCollaborationNetworkByArtist: function (pivotId, depth, fetchAllEdges) {
@@ -288,6 +293,12 @@ export default {
         node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
       });
     },
+    jumpToSimilarity: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
+    },
+    setArtist: function (item) {
+      EventBus.$emit(Events.SET_ARTIST, item);
+    }
   },
 };
 </script>

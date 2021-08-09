@@ -35,26 +35,34 @@ export default {
     SearchView,
   },
   data() {
-    return { tabIndex: 1, nextTabProperty: undefined };
+    return { tabIndex: 1, artistId: undefined, songId: undefined };
   },
   methods: {
     setupEventHandlers: function () {
       EventBus.$on(Events.JUMP_TO_TIMELINE, this.jumpToTimeline);
       EventBus.$on(Events.JUMP_TO_COLLABORATION, this.jumpToCollaboration);
       EventBus.$on(Events.JUMP_TO_SIMILARITY, this.jumpToSimilarity);
+      EventBus.$on(Events.SET_SONG, this.setSong);
+      EventBus.$on(Events.SET_ARTIST, this.setArtist);
     },
-    jumpToTimeline: function (trackId) {
-      this.nextTabProperty = trackId;
+    jumpToTimeline: function (songId) {
+      this.songId = songId;
       this.tabIndex = 3;
     },
     jumpToCollaboration: function (artistId) {
-      this.nextTabProperty = artistId;
+      this.artistId = artistId;
       this.tabIndex = 2;
     },
-    jumpToSimilarity: function (trackId) {
-      this.nextTabProperty = trackId;
+    jumpToSimilarity: function (songId) {
+      this.songId = songId;
       this.tabIndex = 1;
     },
+    setSong: function (item) {
+      this.songId = item;
+    },
+    setArtist: function (item) {
+      this.artistId = item;
+    }
   },
   mounted: function () {
     this.setupEventHandlers();
@@ -64,7 +72,11 @@ export default {
   watch: {
     tabIndex: function () {
       const component = this.$refs[String(this.tabIndex)];
-      component.tabLoaded(this.nextTabProperty);
+      if (this.tabIndex == 2) {
+        component.tabLoaded(this.artistId);
+      } else {
+        component.tabLoaded(this.songId);
+      }
     },
   },
 };

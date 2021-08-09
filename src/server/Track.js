@@ -362,6 +362,38 @@ router.get("/combination/:a/:b", async (req, res) => {
   res.send(documents);
 });
 
+router.get("/combinationSingle/:a/:id", async (req, res) => {
+  const db = await mongoUtil.getDb();
+  attrs = req.params.a.split(",");
+  const embeddingtype = await db.collection("trackembeddingtypes").findOne({
+    attributes: attrs,
+  });
+  const documents = await db.collection("tracktsneembeddings")
+    .aggregate([
+    {
+      '$match': {
+        track_embedding_type_id: {'$eq': embeddingtype._id},
+        'track_id': {'$eq': new ObjectId(req.params.id)},
+      },
+    },
+    {
+      '$lookup': {
+        'from': 'tracks',
+        'localField': 'track_id',
+        'foreignField': '_id',
+        'as': 'info',
+      },
+    },
+    {
+      '$unwind': '$info',
+    },
+    {
+      '$limit': 1,
+    } 
+  ]).toArray();
+  res.send(documents);
+});
+
 router.get("/artist/:id", async (req, res) => {
   const db = await mongoUtil.getDb();
   const documents = await db.collection("tracks")

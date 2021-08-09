@@ -66,7 +66,7 @@
             <b-form-invalid-feedback :state="state">Please select at least three</b-form-invalid-feedback>
             <b-form-valid-feedback :state="state">Selected at least three</b-form-valid-feedback>
           </b-form-checkbox-group><br>
-          <b-button id="recompute" v-on:click="replot" :disabled="selectedAttrs.length < 3 || loadingData">Recompute</b-button><br><br>
+          <b-button id="recompute" v-on:click="replot(currSelectedSongId)" :disabled="selectedAttrs.length < 3 || loadingData">Recompute</b-button><br><br>
           <b-button v-b-toggle.sidebar-right :disabled="loadingData">Histograms</b-button><br><br>
           <b-button id="random" v-on:click="randomSong" :disabled="loadingData">Random</b-button>   
         </b-card-text>    
@@ -157,6 +157,7 @@ export default {
   created: async function () {},
   methods: {
     tabLoaded: async function (newTrackId=null) {
+      console.log("loading SimilarityView: " + newTrackId);
       if (this.rendered && this.currSelectedSongId === newTrackId) {
         return;
       }
@@ -164,14 +165,13 @@ export default {
       this.rendered = true;
     },
     replot: async function(newTrackId=null) {
-      console.log(newTrackId);
       this.currentSongUrl = "";
       d3.select("#spinner").style("display", "inline");
       d3.select('svg').html("");
       d3.select("#nearby-card").style("display", "none");
       d3.select("#song-card").style("display", "none");
       this.loadingData = true;
-      await this.loadData(this.getData(60), newTrackId);
+      var randomIndex = await this.loadData(this.getData(60), newTrackId);
       this.loadingData = false;
       this.sideScales = {};
       this.maxValue = this.songData.length;
@@ -182,11 +182,8 @@ export default {
       d3.select("#spinner").style("display", "none");
       await this.draw2DPlot();
       this.drawnX = {};
-      var randomIndex;
       if (newTrackId===null) {
         randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
-      } else {
-        randomIndex = this.songData.length-1;
       }
       this.track = this.songData[randomIndex];
       this.setSong(this.track.songId);
@@ -200,6 +197,7 @@ export default {
       this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
     },
     loadData: async function(data, newTrackId) {
+      var randomIndex;
       var tracks = await data;
       console.log("data received", tracks);
       var songPoints = [];
@@ -209,7 +207,12 @@ export default {
       this.xMax = Number.NEGATIVE_INFINITY; 
       this.yMin = Number.POSITIVE_INFINITY; 
       this.yMax = Number.NEGATIVE_INFINITY; 
+      var doesnotexist = true;
       for (let i = 0; i < tracks.length; ++i) {
+        if (newTrackId === tracks[i].info._id) {
+          doesnotexist = false;
+          randomIndex = i;
+        }
         var artists = [];
         for (let j = 0; j < tracks[i].info.original_artists.length; ++j) {
           artists.push({
@@ -241,10 +244,13 @@ export default {
         this.yMax = Math.max(this.yMax, tracks[i].dim_2);
         // this.maxPopularity = Math.max(this.maxPopularity, tracks[i].popularity);
       }
-      if (newTrackId!==null) {
+      console.log(newTrackId, doesnotexist);
+      if (newTrackId!==null && doesnotexist) {
         var results = await axios
         .get(`/api/track/combinationSingle/${this.selectedAttrs.join(",")}/${newTrackId}`, {})
         .then((res) => res.data);
+        console.log('here2');
+        randomIndex = tracks.length;
         results = results[0];
         var artists2 = [];
         for (let j = 0; j < results.info.original_artists.length; ++j) {
@@ -276,6 +282,7 @@ export default {
         this.xMax = Math.max(this.xMax, results.dim_1);
         this.yMax = Math.max(this.yMax, results.dim_2);         
       }
+      console.log("here");
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
       var kmeans = new clustering.KMEANS();
@@ -289,6 +296,7 @@ export default {
         }
       }
       // console.log(cnt);
+      return randomIndex;
     },
     getData: async function(popularity) {
       var vueinstance = this;
@@ -506,6 +514,7 @@ export default {
         vueinstance.currSelected = d.id;
         vueinstance.currSelectedSongId = d.songId;
         vueinstance.setSong(d.songId);
+        vueinstance.track = vueinstance.songData[d.id];
         d3.select("#song-title").text(d.name);
         // d3.select("#song-body").html("<b>Artists:</b> "+d.artists+"<br/><b>Release:</b> "+d.date);
         d3.select("#song-card").style("display", "inline");
@@ -559,6 +568,7 @@ export default {
             coords: v.parseCoords(v.getCoords(v.songData[mem[j][0]])),
           })
         }
+        v.nearbysongs = [...new Set(v.nearbysongs)];
         // var elements = "<ul>";
         // for (j = 1; j <= 5; ++j) {
         //   elements += "<li>" + v.songData[mem[j][0]].name;

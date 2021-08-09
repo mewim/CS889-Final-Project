@@ -9,7 +9,9 @@
         <b-card-text id="artist-songs-body" style="text-transform: capitalize;">
           <ul>
             <li v-for="item in songs" v-bind:key="item.song">
-              {{ item.song }}
+              <a href="#" @click.prevent="jumpToSimilarity(item._id)">
+                {{ item.song }}
+              </a>
             </li>
           </ul>
         </b-card-text>
@@ -173,7 +175,8 @@ export default {
       const result = await axios
         .get(`/api/track/artist/${id}`, {})
         .then((res) => res.data);
-      this.songs = result.map((k) => {return {song: k.name};});
+      this.songs = result.map((k) => {return {song: k.name, _id: k._id};});
+      this.songs = [...new Set(this.songs)];
       this.songs = this.songs.slice(0, 5);
       return true;
     },
@@ -289,6 +292,9 @@ export default {
 
         node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
       });
+    },
+    jumpToSimilarity: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
     },
     setArtist: function (item) {
       EventBus.$emit(Events.SET_ARTIST, item);

@@ -387,9 +387,9 @@ router.get("/combinationSingle/:a/:id", async (req, res) => {
     {
       '$unwind': '$info',
     },
-    // {
-    //   '$count': 'num_rows',
-    // } 
+    {
+      '$limit': 1,
+    } 
   ]).toArray();
   res.send(documents);
 });

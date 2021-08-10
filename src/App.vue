@@ -93,6 +93,7 @@ export default {
         component.tabLoaded(this.similaritySongId);
       } else {
         component.tabLoaded(this.timelineSongId);
+        this.timelineSongId = null;
       }
     },
   },

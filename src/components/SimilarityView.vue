@@ -94,7 +94,6 @@
 <script>
 import * as d3 from "d3";
 import * as axios from "axios";
-import * as stringSimilarity from "string-similarity";
 import * as clustering from "density-clustering";
 import EventBus from "../EventBus";
 import Events from "../Events";
@@ -526,27 +525,10 @@ export default {
           .style("stroke-width", 3) //*vueinstance.scale)
           .style("stroke", "black");
         processNearbySongs(d, vueinstance);
-        const params = new URLSearchParams([["name", d.name+" "+d.artists]]);
-        const results = await axios
-          .get(`/api/track`, { params })
-          .then((res) => res.data);
-        var names = results.map((k) => k.name);
-        var matches1 = stringSimilarity.findBestMatch(d.name, names);
-        var matches2 = stringSimilarity.findBestMatch(d.name+" "+
-          d.artists, names);
-        
-        if (matches1.bestMatchIndex == matches2.bestMatchIndex &&
-            matches1.bestMatch.rating >= 0.3 && matches2.bestMatch.rating >= 0.3) {
-          d3.select("#similarity-youtube-player").style("display", "inline");
-          const res = await axios.get(`/api/track/${results[matches1.bestMatchIndex]._id}/youtube-url`);
-          const url = res.data.url;
-          vueinstance.currentSongUrl = url;
-          console.log('found');
-        } else {
-          console.log('did not find');
-          vueinstance.currentSongUrl = "";
-          d3.select("#similarity-youtube-player").style("display", "none");
-        }
+        d3.select("#similarity-youtube-player").style("display", "inline");
+        const res = await axios.get(`/api/track/${d.songId}/youtube-url`);
+        const url = res.data.url;
+        vueinstance.currentSongUrl = url;
       });
       
       async function processNearbySongs(d, v) {

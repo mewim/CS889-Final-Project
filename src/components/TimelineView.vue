@@ -32,7 +32,7 @@
                     oallowfullscreen="oallowfullscreen" 
                     webkitallowfullscreen="webkitallowfullscreen"
                     type="text/html"
-                    style="width:100%;"
+                    style="width:100%; min-height: 200px;"
                     :src="selectedSong.url"
                     frameborder="0"
                     allow="autoplay">
@@ -357,7 +357,7 @@ export default {
         
         const result = await this.getSongYoutubeUrl(song._id);
         this.selectedSong.url = (result || {}).url;
-        this.setTimelineSong(song._id);
+        //this.setTimelineSong(song._id);
         this.$forceUpdate();
     }, 
     

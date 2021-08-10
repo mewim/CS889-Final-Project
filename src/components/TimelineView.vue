@@ -14,10 +14,14 @@
         <hr class="my-12" style="margin-left: 8px; margin-right: 8px;"/>
         
         <b-card-body v-show="selectedSong._id">
-            <b-card-title><a href="#" @click.prevent="jumpToSimilarity(selectedSong._id)">{{selectedSong.name}}</a></b-card-title>
+            <b-card-title><a href="#" @click.prevent="jumpToSimilarity(selectedSong._id)" title="Open this song in similarity view">{{selectedSong.name}}</a></b-card-title>
             <b-card-text>
-                <b>Artists: </b><a href="#" @click.prevent="jumpToCollaboration(selectedSong._id)">{{selectedSong.artistStr}}</a><br>
+                <b>Artists: </b>
+                <span v-for="(artist, key) in selectedSong.artists" :key="key">
+                    <a href="#" @click.prevent="jumpToCollaboration(artist._id)" title="Open this artist in collaboration view">{{artist.name}}</a>
+                <span v-if="key + 1 !== selectedSong.artists.length">, </span></span><br>
                 <b>Release: </b>{{selectedSong.release_year}}<br>
+                <b>Genre: </b>{{selectedSong.genre}}<br>
                 <b>{{(attributes[currentAttr] || {}).title}}: </b>{{selectedSong[currentAttr] + ' ' + ((attributes[currentAttr] || {}).unit || '')}}<br>
             </b-card-text>
             <div v-show="selectedSong.url">
@@ -49,8 +53,10 @@ import axios from "axios";
 import * as d3 from "d3";
 import EventBus from "../EventBus";
 import Events from "../Events";
+import genres from "../genres";
 
-const genres = [...Array(11).keys()];  // temp fix
+//const genres = [...Array(11).keys()];  // temp fix
+const nGenres = genres.length;
 const songsLimit = 100;
 
 // const width = 1100;
@@ -305,6 +311,11 @@ export default {
                 .y1(d => yContextScale(d.avg))
             );
             
+        if (this.selectedSong && this.selectedSong._id) {
+            const song = await this.getSong(this.selectedSong._id);  // in order to get the new selected attribute of this song
+            this.selectedSong[this.currentAttr] = song[this.currentAttr];
+        }
+            
         this.loadSongsData(0);
     },
     
@@ -332,7 +343,7 @@ export default {
             }
             else {
                 d3.select("#song_" + prevId)
-                    .style("fill", colorScale(song.genre));
+                    .style("fill", colorScale(genres.indexOf(song.genre)/nGenres));
                 this.selectedSong = {};
             }
         }
@@ -340,6 +351,7 @@ export default {
         //d3.select("#song_" + song._id)
         //    .style("fill", "black");
             
+        EventBus.$emit(Events.PAUSE_ALL_YOUTUBE);
         this.selectedSong = Object.assign({}, song);
         this.selectedSong.artistStr = song.artists.map(a => a.name).join(', ');
         
@@ -399,7 +411,7 @@ export default {
             .range([contextHeight, 0]);
             
         colorScale = d3.scaleSequential(d3.interpolateRainbow)
-            .domain(d3.extent(genres));
+        //    .domain(d3.extent(genres));
             
         xAxisFocus = d3.axisBottom(xFocusScale).ticks(d3.timeYear.every(5)).tickSize(-height, 0, 0);
         yAxisFocus = d3.axisLeft(yFocusScale);
@@ -528,7 +540,7 @@ export default {
             .attr("cx", d => xFocusScale(d.release_date))
             .attr("cy", d => yFocusScale(d[this.currentAttr]))
             .attr("r", 7)
-            .style("fill", d => colorScale(d.genre))
+            .style("fill", d => colorScale(genres.indexOf(d.genre)/nGenres))
             .style("stroke", "white")
             .style("opacity", '0.7')
             .on("mouseover", function(d) {

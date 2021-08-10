@@ -85,10 +85,8 @@ export default {
       const component = this.$refs[String(this.tabIndex)];
       if (this.tabIndex == 2) {
         component.tabLoaded(this.artistId);
-        this.artistId = undefined;
       } else {
         component.tabLoaded(this.songId);
-        this.songId = undefined;
       }
     },
   },

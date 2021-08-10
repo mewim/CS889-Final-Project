@@ -8,11 +8,11 @@
         </b-card-title>
         <b-card-text id="song-body">
           <b>Artists:</b> <span v-for="(artist, key) in track.artists" :key="key">
-            <a href="#" @click.prevent="jumpToCollaboration(artist._id)">
+            <a href="#" @click.prevent="jumpToCollaboration(artist._id)" title="Open this artist in collaboration view">
               {{ artist.name }}
             </a><span v-if="key + 1 !== track.artists.length">, </span>
           </span><br>
-          <b>Release:</b> <a href="#" @click.prevent="jumpToTimeline(track.songId)">
+          <b>Release:</b> <a href="#" @click.prevent="jumpToTimeline(track.songId)" title="Open this song in timeline view">
             {{ String(track.date) }}
           </a><br>
           <b>Genre:</b> {{ String(track.genre) }}
@@ -41,7 +41,7 @@
         <b-card-text id="nearby-body" style="text-transform: capitalize;">
           <ul>
             <li v-for="item in nearbysongs" v-bind:key="item.song">
-              <a style="cursor:pointer;" :class="item" v-on:click="navigateToPoint(item.coords)">{{ item.song }}</a>
+              <a style="cursor:pointer;" :class="item" v-on:click="navigateToPoint(item.coords)" title="Navigate to this song">{{ item.song }}</a>
             </li>
           </ul>
         </b-card-text>
@@ -67,9 +67,9 @@
             <b-form-invalid-feedback :state="state">Please select at least three</b-form-invalid-feedback>
             <b-form-valid-feedback :state="state">Selected at least three</b-form-valid-feedback>
           </b-form-checkbox-group><br>
-          <b-button id="recompute" v-on:click="replot(currSelectedSongId)" :disabled="selectedAttrs.length < 3 || loadingData">Recompute</b-button><br><br>
-          <b-button v-b-toggle.sidebar-right :disabled="loadingData">Histograms</b-button><br><br>
-          <b-button id="random" v-on:click="randomSong" :disabled="loadingData">Random</b-button>   
+          <b-button id="recompute" v-on:click="replot(currSelectedSongId)" :disabled="selectedAttrs.length < 3 || loadingData" title="Recompute the view with the selected attributes">Recompute</b-button><br><br>
+          <b-button v-b-toggle.sidebar-right :disabled="loadingData" title="Open the histogram view of attributes distributions">Histograms</b-button><br><br>
+          <b-button id="random" v-on:click="randomSong" :disabled="loadingData" title="Navigate to a new random song">Random</b-button>   
         </b-card-text>    
       </b-card>
     </div>
@@ -85,7 +85,7 @@
       <div style="padding-left:2.5em;" id="coordinates">
       </div><br>
       <div style="padding-left:2.5em;">
-        <b-button v-b-toggle.sidebar-right :disabled="loadingData" v-on:click="navigateToPoint(currentCoords)">Navigate</b-button>
+        <b-button v-b-toggle.sidebar-right :disabled="loadingData" v-on:click="navigateToPoint(currentCoords)" title="Navigate to a song within the selected attribute ranges">Navigate</b-button>
       </div>
     </b-sidebar>
   </div>

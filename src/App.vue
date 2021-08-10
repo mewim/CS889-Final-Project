@@ -33,19 +33,20 @@ export default {
     SearchView,
   },
   data() {
-    return { tabIndex: 1, artistId: undefined, songId: undefined };
+    return { tabIndex: 1, artistId: undefined, similaritySongId: undefined, timelineSongId: undefined };
   },
   methods: {
     setupEventHandlers: function() {
       EventBus.$on(Events.JUMP_TO_TIMELINE, this.jumpToTimeline);
       EventBus.$on(Events.JUMP_TO_COLLABORATION, this.jumpToCollaboration);
       EventBus.$on(Events.JUMP_TO_SIMILARITY, this.jumpToSimilarity);
-      EventBus.$on(Events.SET_SONG, this.setSong);
+      EventBus.$on(Events.SET_SIMILARITY_SONG, this.setSimilaritySong);
       EventBus.$on(Events.SET_ARTIST, this.setArtist);
+      EventBus.$on(Events.SET_TIMELINE_SONG, this.setTimelineSong);
       EventBus.$on(Events.PAUSE_ALL_YOUTUBE, this.pauseAllYoutube);
     },
     jumpToTimeline: function(songId) {
-      this.songId = songId;
+      this.timelineSongId = songId;
       this.tabIndex = 3;
     },
     jumpToCollaboration: function(artistId) {
@@ -53,11 +54,14 @@ export default {
       this.tabIndex = 2;
     },
     jumpToSimilarity: function(songId) {
-      this.songId = songId;
+      this.similaritySongId = songId;
       this.tabIndex = 1;
     },
-    setSong: function(item) {
-      this.songId = item;
+    setSimilaritySong: function(item) {
+      this.similaritySongId = item;
+    },
+    setTimelineSong: function(item) {
+      this.timelineSongId = item;
     },
     setArtist: function(item) {
       this.artistId = item;
@@ -67,7 +71,7 @@ export default {
         try {
           p.contentWindow.postMessage(
             JSON.stringify({ event: "command", func: "pauseVideo" }),
-            "https://www.youtube.com"
+            "*"
           );
         } catch (_) {
           return;
@@ -85,8 +89,10 @@ export default {
       const component = this.$refs[String(this.tabIndex)];
       if (this.tabIndex == 2) {
         component.tabLoaded(this.artistId);
+      } else if (this.tabIndex == 1) {
+        component.tabLoaded(this.similaritySongId);
       } else {
-        component.tabLoaded(this.songId);
+        component.tabLoaded(this.timelineSongId);
       }
     },
   },

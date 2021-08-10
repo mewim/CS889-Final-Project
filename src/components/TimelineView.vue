@@ -14,9 +14,9 @@
         <hr class="my-12" style="margin-left: 8px; margin-right: 8px;"/>
         
         <b-card-body v-show="selectedSong._id">
-            <b-card-title>{{selectedSong.name}}</b-card-title>
+            <b-card-title><a href="#" @click.prevent="jumpToSimilarity(selectedSong._id)">{{selectedSong.name}}</a></b-card-title>
             <b-card-text>
-                <b>Artists: </b>{{selectedSong.artistStr}}<br>
+                <b>Artists: </b><a href="#" @click.prevent="jumpToCollaboration(selectedSong._id)">{{selectedSong.artistStr}}</a><br>
                 <b>Release: </b>{{selectedSong.release_year}}<br>
                 <b>{{(attributes[currentAttr] || {}).title}}: </b>{{selectedSong[currentAttr] + ' ' + ((attributes[currentAttr] || {}).unit || '')}}<br>
             </b-card-text>
@@ -47,6 +47,8 @@
 <script>
 import axios from "axios";
 import * as d3 from "d3";
+import EventBus from "../EventBus";
+import Events from "../Events";
 
 const genres = [...Array(11).keys()];  // temp fix
 const songsLimit = 100;
@@ -78,6 +80,8 @@ let yFocusScale = null;
 let xContextScale = null;
 let yContextScale = null;
 let colorScale = null;
+let zoom = null;
+let brush = null;
 
 export default {
   name: "TimelineView",
@@ -99,13 +103,51 @@ export default {
   mounted: async function () {},
   methods: {
     tabLoaded: async function (songId) {
-      if (this.rendered) {
-        return;
+      if (this.rendered && !songId) {
+          console.log('Already rendered with no default song!');
+          return;
       }
-      await this.loadInitialData();
-      this.plotView();
-      this.loadSongsData(0, songId);
-      this.rendered = true;
+      
+      let defaultSong = null;
+      if (songId) {
+          defaultSong = await this.getSong(songId);
+          //console.log('Default song with id ' + songId + ':', defaultSong);
+          if (defaultSong) {
+              defaultSong.release_date = new Date(defaultSong.release_date);
+              let start = new Date(defaultSong.release_date);
+              start.setFullYear(start.getFullYear() - 3);
+              let end = new Date(defaultSong.release_date);
+              end.setFullYear(end.getFullYear() + 3);
+              
+              this.startDate = start;
+              this.endDate = end;
+              //console.log('Changed dates based on default song: startDate: ' + this.startDate + ', endDate: ' + this.endDate);
+          }
+      }
+      
+      if (this.rendered && !defaultSong) {
+          console.log('Already rendered with empty default song!');
+          return;
+      }
+      else if (this.rendered && defaultSong) {
+          console.log('Zooming into period!');
+          this.zoomIntoPeriod(defaultSong);
+      }
+      else {
+          console.log('Rendering for first time!');
+          await this.loadInitialData();
+          this.plotView();
+          this.loadSongsData(0, defaultSong);
+          this.rendered = true;
+      }
+    },
+    
+    jumpToCollaboration: function (artistId) {
+        EventBus.$emit(Events.JUMP_TO_COLLABORATION, artistId);
+    },
+    
+    jumpToSimilarity: function (trackId) {
+        EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
     },
     
     getAttributeAggregations: function (startYear, endYear) {
@@ -167,8 +209,13 @@ export default {
         let yearInfo = result.release_year;
         this.minDate = new Date("" + yearInfo.min);
         this.maxDate = new Date(yearInfo.max, 11, 31);  // new Date("" + (yearInfo.max+1));
-        this.startDate = this.minDate;
-        this.endDate = this.maxDate;
+        if (!this.startDate) {
+            this.startDate = this.minDate;
+        }
+        if (!this.endDate) {
+            this.endDate = this.maxDate;
+        }
+        
         delete result.release_year;
         delete result.count;
         //delete result.genre;
@@ -183,7 +230,7 @@ export default {
         this.currentAttrAggs = aggresult;
     },
     
-    loadSongsData: function (serverRequestDelay, songId) {
+    loadSongsData: function (serverRequestDelay, song) {
         if (this.serverRequest) {
             //console.log('server request already underway!');
             return;
@@ -204,27 +251,20 @@ export default {
             
             const result = await self.getTopSongs(startYear, endYear, songsLimit, self.currentAttr);
             //console.log('Songs data from server:', result);
-            let defaultSong = null;
+            let defaultSong = song ? song : (self.selectedSong || {})._id ? self.selectedSong : null;
+            let shouldAddDefaultSong = true;
             self.songsData = result.filter((s) => {
                 s.release_date = new Date(s.release_date);
-                if (songId && (s._id == songId))
-                    defaultSong = s;
+                if (defaultSong && (s._id == defaultSong._id))
+                    shouldAddDefaultSong = false;
                 if ((s.release_date < self.startDate) || (s.release_date > self.endDate))
                     return false;
                 return true;
             });
             
-            if (songId && !defaultSong) {
-                console.log('Default song with id ' + songId + ' needs to be downloaded separately!');
-                defaultSong = await self.getSong(songId);
-                console.log('Default song:', defaultSong);
-                if (defaultSong) {
-                    defaultSong.release_date = new Date(defaultSong.release_date);
-                    self.songsData.push(defaultSong);
-                } 
-            }
-            else if (songId) {
-                console.log('Default song with id ' + defaultSong._id + ' already among top songs!');
+            if (defaultSong && shouldAddDefaultSong && (defaultSong.release_date >= self.startDate) && (defaultSong.release_date <= self.endDate)) {
+                //console.log('Default song is in the period of focus and should be added to top songs!', defaultSong);
+                self.songsData.push(defaultSong);
             }
             
             self.plotSongs();
@@ -236,7 +276,7 @@ export default {
     
     attributeChanged: async function () {
         //console.log('Attribute changed to:', this.currentAttr);
-        this.selectedSong = {};
+        //this.selectedSong = {};
         const minYear = this.minDate.toISOString().substring(0,4);
         const maxYear = this.maxDate.toISOString().substring(0,4);
         let aggresult = await this.getAttributeAggregationByYear(minYear, maxYear, this.currentAttr); 
@@ -268,9 +308,24 @@ export default {
         this.loadSongsData(0);
     },
     
+    zoomIntoPeriod: function (defaultSong) {
+        //console.log('New zoom scale:', (focusWidth / (xContextScale(this.endDate) - xContextScale(this.startDate))));
+        xFocusScale.domain([this.startDate, this.endDate]);
+        d3.select('.focus').select(".axis_x").call(xAxisFocus);
+        d3.select('.context').select(".brush").call(brush.move, [xContextScale(this.startDate), xContextScale(this.endDate)]);
+        d3.select(".zoom").call(zoom.transform, d3.zoomIdentity
+            .scale(focusWidth / (xContextScale(this.endDate) - xContextScale(this.startDate)))
+            .translate(-xContextScale(this.startDate), 0));
+            
+        this.loadSongsData(0, defaultSong);
+    },
+    
     selectSong: async function (song) {
-        console.log('Selecting song', song);
+        //console.log('Selecting song', song);
         const prevId = (this.selectedSong || {})._id; 
+        d3.select("#song_" + song._id)
+            .style("fill", "black");
+            
         if (prevId) {
             if (song._id == prevId) {
                 return;
@@ -282,8 +337,8 @@ export default {
             }
         }
         
-        d3.select("#song_" + song._id)
-            .style("fill", "black");
+        //d3.select("#song_" + song._id)
+        //    .style("fill", "black");
             
         this.selectedSong = Object.assign({}, song);
         this.selectedSong.artistStr = song.artists.map(a => a.name).join(', ');
@@ -350,12 +405,12 @@ export default {
         yAxisFocus = d3.axisLeft(yFocusScale);
         xAxisContext = d3.axisBottom(xContextScale);
         
-        const brush = d3.brushX()
+        brush = d3.brushX()
             .extent([[0, 0], [focusWidth, contextHeight]])
             .on("brush end", brushedCallback);
 
-        const zoom = d3.zoom()
-            .scaleExtent([1, 10])  // can set the minimum higher than 1 to prevent further unzooming
+        zoom = d3.zoom()
+            .scaleExtent([1, 20])  // can set the minimum higher than 1 to prevent further unzooming
             .translateExtent([[0, 0], [focusWidth, focusHeight]])
             .extent([[0, 0], [focusWidth, focusHeight]])
             .on("zoom", zoomedCallback);
@@ -403,8 +458,9 @@ export default {
         context.append("g")
             .attr("class", "brush")
             .call(brush)
-            .call(brush.move, xFocusScale.range());  // in order to set the default to a smaller period: [xContextScale(startDate), xContextScale(endDate)]
+            .call(brush.move, [xContextScale(this.startDate), xContextScale(this.endDate)]);  // in order to set the default to the entire period: xFocusScale.range()
 
+        //console.log('Initial zoom scale:', (focusWidth / (xContextScale(this.endDate) - xContextScale(this.startDate))));
         focus.append("rect")  // svg
             .attr("class", "zoom")
             .attr("width", focusWidth)
@@ -413,7 +469,10 @@ export default {
             .style("cursor", "move")
             .style("fill", "none")
             .style("pointer-events", "all")
-            .call(zoom);
+            .call(zoom)  // this is enough for initial zooming to the entire period
+            .call(zoom.transform, d3.zoomIdentity
+               .scale(focusWidth / (xContextScale(this.endDate) - xContextScale(this.startDate)))
+               .translate(-xContextScale(this.startDate), 0));
             
         let self = this;
         function brushedCallback() {

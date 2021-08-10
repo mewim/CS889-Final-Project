@@ -65,6 +65,7 @@ export default {
     tabIndex: function () {
       const component = this.$refs[String(this.tabIndex)];
       component.tabLoaded(this.nextTabProperty);
+      this.nextTabProperty = undefined;
     },
   },
 };

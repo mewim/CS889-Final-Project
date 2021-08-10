@@ -290,17 +290,13 @@ export default {
       }
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
-      var kmeans = new clustering.KMEANS();
-      var clusters = kmeans.run(songPoints, 10);
-      // console.log(clusters, clusters.map((x) => x.length).reduce((a, b) => a + b, 0));
-      // var cnt = 0;
-      for (let i = 0; i < 10; ++i) {
-        for (let j = 0; j < clusters[i].length; ++j) {
-          this.songData[clusters[i][j]].c = i;
-          // cnt++;
-        }
-      }
-      // console.log(cnt);
+      // var kmeans = new clustering.KMEANS();
+      // var clusters = kmeans.run(songPoints, 10);
+      // for (let i = 0; i < 10; ++i) {
+      //   for (let j = 0; j < clusters[i].length; ++j) {
+      //     this.songData[clusters[i][j]].c = i;
+      //   }
+      // }
       return randomIndex;
     },
     getData: async function(popularity) {

@@ -94,7 +94,7 @@
 <script>
 import * as d3 from "d3";
 import * as axios from "axios";
-import * as clustering from "density-clustering";
+// import * as clustering from "density-clustering";
 import EventBus from "../EventBus";
 import Events from "../Events";
 import genres from "../genres";

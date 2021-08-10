@@ -357,6 +357,7 @@ export default {
         
         const result = await this.getSongYoutubeUrl(song._id);
         this.selectedSong.url = (result || {}).url;
+        this.setTimelineSong(song._id);
         this.$forceUpdate();
     }, 
     
@@ -564,7 +565,10 @@ export default {
                     .html("");
             })
             .on("click", this.selectSong);
-    }
+    },
+    setTimelineSong: function (item) {
+      EventBus.$emit(Events.SET_TIMELINE_SONG, item);
+    },
   },
 };
 </script>

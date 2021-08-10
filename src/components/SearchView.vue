@@ -20,7 +20,7 @@
       <div class="serach-results-container" v-show="isSearchResultsShown">
         <b-card v-for="track in results" :key="track._id">
           <h4 class="card-title">
-            <a href="#" @click.prevent="jumpToSimilarity(track._id)">{{
+            <a href="#" @click.prevent="jumpToSimilarity(track._id)" title="Open this song in similarity view">{{
               track.name
             }}</a>
           </h4>
@@ -29,18 +29,18 @@
           </h6>
           <b-card-text>
             <span v-for="(artist, key) in track.artists" :key="key">
-              <a href="#" @click.prevent="jumpToCollaboration(artist._id)">{{
+              <a href="#" @click.prevent="jumpToCollaboration(artist._id)" title="Open this artist in collaboration view">{{
                 artist.name
               }}</a
               ><span v-if="key + 1 !== track.artists.length">, </span>
             </span>
-            (<a href="#" @click.prevent="jumpToTimeline(track._id)">{{
+            (<a href="#" @click.prevent="jumpToTimeline(track._id)" title="Open this song in timeline view">{{
               String(track.release_year)
             }}</a
             >)
             <p>{{track.genre}}</p>
           </b-card-text>
-          <a href="#" @click.prevent="playTrack(track._id)" class="card-link"
+          <a href="#" @click.prevent="playTrack(track._id)" class="card-link" title="Play this song's video in YouTube"
             >Play on YouTube</a
           >
         </b-card>

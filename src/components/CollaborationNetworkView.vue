@@ -9,7 +9,7 @@
         <b-card-text id="artist-songs-body" style="text-transform: capitalize;">
           <ul>
             <li v-for="item in songs" v-bind:key="item.song">
-              <a href="#" @click.prevent="jumpToSimilarity(item._id)">
+              <a href="#" @click.prevent="jumpToSimilarity(item._id)" title="Open this song in similarity view">
                 {{ item.song }}
               </a>
             </li>
@@ -27,16 +27,16 @@
           <b>Genres of this artist:</b>
           <ul>
             <li v-for="item in genres" v-bind:key="item.genre">
-              <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)">{{ item.genre }}</a>
+              <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)" title="Highlight artists mainly working in this genre">{{ item.genre }}</a>
             </li>
           </ul>
           <b>Other genres in this graph:</b>
           <ul>
             <li v-for="item in genres2" v-bind:key="item.genre">
-              <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)">{{ item.genre }}</a>
+              <a style="cursor:pointer;" :class="item" v-on:click="highlightGenres(item)" title="Highlight artists mainly working in this genre">{{ item.genre }}</a>
             </li>
           </ul>
-          <b-button v-on:click="highlightGenres(null)">Reset</b-button>
+          <b-button v-on:click="highlightGenres(null)" title="Clear highlighting artist genres">Reset</b-button>
           <br><br>
         </b-card-text>
       </b-card>

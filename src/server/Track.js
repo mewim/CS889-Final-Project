@@ -220,7 +220,7 @@ router.get("/top-songs/", async (req, res) => {
       name: 1, 
       release_date: 1,
       release_year: 1,
-      genre: "$key",  // temp fix
+      genre: 1,
       popularity: 1, 
       artists: 1
   };

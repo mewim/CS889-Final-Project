@@ -94,7 +94,7 @@
 <script>
 import * as d3 from "d3";
 import * as axios from "axios";
-import * as clustering from "density-clustering";
+// import * as clustering from "density-clustering";
 import EventBus from "../EventBus";
 import Events from "../Events";
 import genres from "../genres";
@@ -167,6 +167,7 @@ export default {
     },
     replot: async function(newTrackId=null) {
       this.currentSongUrl = "";
+      this.pauseAllYoutube();
       d3.select("#spinner").style("display", "inline");
       d3.select('svg').html("");
       d3.select("#nearby-card").style("display", "none");
@@ -187,14 +188,17 @@ export default {
         randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
       }
       this.track = this.songData[randomIndex];
-      this.setSong(this.track.songId);
+      this.setSimilaritySong(this.track.songId);
       this.currSelectedSongId = this.track.songId;
       this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
+      const res = await axios.get(`/api/track/${this.track.songId}/youtube-url`);
+      const url = res.data.url;
+      this.currentSongUrl = url;
     },
     randomSong: function() {
       var randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
       this.track = this.songData[randomIndex];
-      this.setSong(this.track.songId);
+      this.setSimilaritySong(this.track.songId);
       this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
     },
     loadData: async function(data, newTrackId) {
@@ -286,17 +290,13 @@ export default {
       }
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
-      var kmeans = new clustering.KMEANS();
-      var clusters = kmeans.run(songPoints, 10);
-      // console.log(clusters, clusters.map((x) => x.length).reduce((a, b) => a + b, 0));
-      // var cnt = 0;
-      for (let i = 0; i < 10; ++i) {
-        for (let j = 0; j < clusters[i].length; ++j) {
-          this.songData[clusters[i][j]].c = i;
-          // cnt++;
-        }
-      }
-      // console.log(cnt);
+      // var kmeans = new clustering.KMEANS();
+      // var clusters = kmeans.run(songPoints, 10);
+      // for (let i = 0; i < 10; ++i) {
+      //   for (let j = 0; j < clusters[i].length; ++j) {
+      //     this.songData[clusters[i][j]].c = i;
+      //   }
+      // }
       return randomIndex;
     },
     getData: async function(popularity) {
@@ -514,7 +514,7 @@ export default {
         }
         vueinstance.currSelected = d.id;
         vueinstance.currSelectedSongId = d.songId;
-        vueinstance.setSong(d.songId);
+        vueinstance.setSimilaritySong(d.songId);
         vueinstance.track = vueinstance.songData[d.id];
         d3.select("#song-title").text(d.name);
         // d3.select("#song-body").html("<b>Artists:</b> "+d.artists+"<br/><b>Release:</b> "+d.date);
@@ -528,6 +528,7 @@ export default {
         d3.select("#similarity-youtube-player").style("display", "inline");
         const res = await axios.get(`/api/track/${d.songId}/youtube-url`);
         const url = res.data.url;
+        vueinstance.pauseAllYoutube();
         vueinstance.currentSongUrl = url;
       });
       
@@ -587,11 +588,14 @@ export default {
     jumpToSimilarity: function (trackId) {
       EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
     },
-    setSong: function (item) {
-      EventBus.$emit(Events.SET_SONG, item);
+    setSimilaritySong: function (item) {
+      EventBus.$emit(Events.SET_SIMILARITY_SONG, item);
     },
     setArtist: function (item) {
       EventBus.$emit(Events.SET_ARTIST, item);
+    },
+    pauseAllYoutube: function() {
+      EventBus.$emit(Events.PAUSE_ALL_YOUTUBE);
     }
   },
   computed: {

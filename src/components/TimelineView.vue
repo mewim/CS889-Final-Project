@@ -314,6 +314,7 @@ export default {
         if (this.selectedSong && this.selectedSong._id) {
             const song = await this.getSong(this.selectedSong._id);  // in order to get the new selected attribute of this song
             this.selectedSong[this.currentAttr] = song[this.currentAttr];
+            this.$forceUpdate();
         }
             
         this.loadSongsData(0);

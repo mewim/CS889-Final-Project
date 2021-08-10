@@ -7,7 +7,15 @@
           Card Title
         </b-card-title>
         <b-card-text id="song-body">
-          Some quick example text to build on the card title and make up the bulk of the card's content.
+          <b>Artists:</b> <span v-for="(artist, key) in track.artists" :key="key">
+            <a href="#" @click.prevent="jumpToCollaboration(artist._id)">
+              {{ artist.name }}
+            </a><span v-if="key + 1 !== track.artists.length">, </span>
+          </span><br>
+          <b>Release:</b> <a href="#" @click.prevent="jumpToTimeline(track.songId)">
+            {{ String(track.date) }}
+          </a><br>
+          <b>Genre:</b> {{ String(track.genre) }}
         </b-card-text>
         <iframe
           type="text/html"
@@ -59,7 +67,7 @@
             <b-form-invalid-feedback :state="state">Please select at least three</b-form-invalid-feedback>
             <b-form-valid-feedback :state="state">Selected at least three</b-form-valid-feedback>
           </b-form-checkbox-group><br>
-          <b-button id="recompute" v-on:click="replot" :disabled="selectedAttrs.length < 3 || loadingData">Recompute</b-button><br><br>
+          <b-button id="recompute" v-on:click="replot(currSelectedSongId)" :disabled="selectedAttrs.length < 3 || loadingData">Recompute</b-button><br><br>
           <b-button v-b-toggle.sidebar-right :disabled="loadingData">Histograms</b-button><br><br>
           <b-button id="random" v-on:click="randomSong" :disabled="loadingData">Random</b-button>   
         </b-card-text>    
@@ -88,6 +96,10 @@ import * as d3 from "d3";
 import * as axios from "axios";
 import * as stringSimilarity from "string-similarity";
 import * as clustering from "density-clustering";
+import EventBus from "../EventBus";
+import Events from "../Events";
+import genres from "../genres";
+
 
 export default {
   name: "SimilarityView",
@@ -106,6 +118,7 @@ export default {
       currValue: 0,
       maxValue: 0,
       currSelected: -1,
+      currSelectedSongId: -1,
       scale: 1.0,
       currentSongUrl: "",
       selectedAttrs: [
@@ -122,6 +135,13 @@ export default {
       currentCoords: null,
       drawnX: {},
       nearbysongs: null,
+      track: {
+        "info": {
+          "artists": [
+            {"name": "A", "id": "1234"},
+          ]
+        }
+      },
     };
   },
   mounted: async function () {
@@ -138,35 +158,25 @@ export default {
   },
   created: async function () {},
   methods: {
-    tabLoaded: async function () {
-      if (this.rendered) {
+    tabLoaded: async function (newTrackId=null) {
+      console.log("loading SimilarityView: " + newTrackId);
+      if (this.rendered && this.currSelectedSongId === newTrackId) {
         return;
       }
-      this.loadingData = true;
-      await this.loadData(this.getData(60));
-      this.loadingData = false;
-      this.sideScales = {};
-      for (let attrid = 0; attrid < this.selectedAttrs.length; ++attrid) {
-        this.plotHistogram(this.selectedAttrs[attrid]);
-      }
-      this.maxValue = this.songData.length;
-      d3.select("#spinner").style("display", "none");
-      await this.draw2DPlot();
-      this.drawnX = {};
-      var randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
-      this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
+      this.replot(newTrackId);
       this.rendered = true;
     },
-    replot: async function() {
+    replot: async function(newTrackId=null) {
       this.currentSongUrl = "";
       d3.select("#spinner").style("display", "inline");
       d3.select('svg').html("");
       d3.select("#nearby-card").style("display", "none");
       d3.select("#song-card").style("display", "none");
       this.loadingData = true;
-      await this.loadData(this.getData(60));
+      var randomIndex = await this.loadData(this.getData(60), newTrackId);
       this.loadingData = false;
       this.sideScales = {};
+      this.maxValue = this.songData.length;
       d3.select("#histograms").html("");
       for (let attrid = 0; attrid < this.selectedAttrs.length; ++attrid) {
         this.plotHistogram(this.selectedAttrs[attrid]);
@@ -174,14 +184,22 @@ export default {
       d3.select("#spinner").style("display", "none");
       await this.draw2DPlot();
       this.drawnX = {};
-      var randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
+      if (newTrackId===null) {
+        randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
+      }
+      this.track = this.songData[randomIndex];
+      this.setSong(this.track.songId);
+      this.currSelectedSongId = this.track.songId;
       this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
     },
     randomSong: function() {
       var randomIndex = Math.floor(Math.random() * (2000-1 + 1) + 1);
+      this.track = this.songData[randomIndex];
+      this.setSong(this.track.songId);
       this.navigateToPoint(this.parseCoords(this.getCoords(this.songData[randomIndex])));
     },
-    loadData: async function(data) {
+    loadData: async function(data, newTrackId) {
+      var randomIndex;
       var tracks = await data;
       console.log("data received", tracks);
       var songPoints = [];
@@ -191,15 +209,28 @@ export default {
       this.xMax = Number.NEGATIVE_INFINITY; 
       this.yMin = Number.POSITIVE_INFINITY; 
       this.yMax = Number.NEGATIVE_INFINITY; 
+      var doesnotexist = true;
       for (let i = 0; i < tracks.length; ++i) {
+        if (newTrackId === tracks[i].info._id) {
+          doesnotexist = false;
+          randomIndex = i;
+        }
+        var artists = [];
+        for (let j = 0; j < tracks[i].info.original_artists.length; ++j) {
+          artists.push({
+            name: tracks[i].info.original_artists[j],
+            _id: tracks[i].info.artists_id[j],
+          })
+        }
         this.songNames.push(tracks[i].info.name);
         this.songData.push({
           id: i,
           songId: tracks[i].info._id,
           x: tracks[i].dim_1, y: tracks[i].dim_2, c: -1,
+          genre: tracks[i].info.genre,
           p: tracks[i].info.popularity,
           name: tracks[i].info.name,
-          artists: tracks[i].info.original_artists.join(", "),
+          artists: artists,
           date: tracks[i].info.release_date.split("-")[0],
           danceability: tracks[i].info.danceability,
           energy: tracks[i].info.energy,
@@ -216,6 +247,44 @@ export default {
         this.yMax = Math.max(this.yMax, tracks[i].dim_2);
         // this.maxPopularity = Math.max(this.maxPopularity, tracks[i].popularity);
       }
+      console.log(newTrackId, doesnotexist);
+      if (newTrackId!==null && doesnotexist) {
+        var results = await axios
+        .get(`/api/track/combinationSingle/${this.selectedAttrs.join(",")}/${newTrackId}`, {})
+        .then((res) => res.data);
+        randomIndex = tracks.length;
+        results = results[0];
+        var artists2 = [];
+        for (let j = 0; j < results.info.original_artists.length; ++j) {
+          artists2.push({
+            name: results.info.original_artists[j],
+            _id: results.info.artists_id[j],
+          })
+        }
+        this.songNames.push(results.name);
+        this.songData.push({
+          id: tracks.length,
+          songId: results.info._id,
+          x: results.dim_1, y: results.dim_2, c: -1,
+          p: 60,
+          genre: results.info.genre,
+          name: results.info.name,
+          artists: artists2,
+          date: results.info.release_date.split("-")[0],
+          danceability: results.info.danceability,
+          energy: results.info.energy,
+          speechiness: results.info.speechiness,
+          acousticness: results.info.acousticness,
+          instrumentalness: results.info.instrumentalness,
+          liveness: results.info.liveness,
+          valence: results.info.valence,
+        });
+        songPoints.push([results.dim_1, results.dim_2]);
+        this.xMin = Math.min(this.xMin, results.dim_1);
+        this.yMin = Math.min(this.yMin, results.dim_2);
+        this.xMax = Math.max(this.xMax, results.dim_1);
+        this.yMax = Math.max(this.yMax, results.dim_2);         
+      }
       this.xMin -= this.margin; this.yMin -= this.margin;
       this.xMax += this.margin; this.yMax += this.margin;
       var kmeans = new clustering.KMEANS();
@@ -229,6 +298,7 @@ export default {
         }
       }
       // console.log(cnt);
+      return randomIndex;
     },
     getData: async function(popularity) {
       var vueinstance = this;
@@ -436,7 +506,7 @@ export default {
       .attr("r", 5)
       .attr("data-popularity", function(d) { return d.p })
       .attr("data-cluster", function(d) { return d.c })
-      .style("fill", function (d) { return c((d.c)/9.0) })
+      .style("fill", function (d) { return c((genres.indexOf(d.genre)/31.0)) })
       .style("opacity", Math.random()*0.3+0.4)
       .attr("display", function(d) { return (d.p >= 140 - p(1.0)) ? "inline" : "none" })
       .on("click", async function(d) {
@@ -444,8 +514,11 @@ export default {
           d3.select(".circ-"+vueinstance.currSelected.toString()).style("stroke", "none");
         }
         vueinstance.currSelected = d.id;
+        vueinstance.currSelectedSongId = d.songId;
+        vueinstance.setSong(d.songId);
+        vueinstance.track = vueinstance.songData[d.id];
         d3.select("#song-title").text(d.name);
-        d3.select("#song-body").html("<b>Artists:</b> "+d.artists+"<br/><b>Release:</b> "+d.date);
+        // d3.select("#song-body").html("<b>Artists:</b> "+d.artists+"<br/><b>Release:</b> "+d.date);
         d3.select("#song-card").style("display", "inline");
         d3.select("#nearby-card").style("display", "inline");
         d3.select("#nearby-progress").style("display", "inline");
@@ -497,6 +570,7 @@ export default {
             coords: v.parseCoords(v.getCoords(v.songData[mem[j][0]])),
           })
         }
+        v.nearbysongs = [...new Set(v.nearbysongs)];
         // var elements = "<ul>";
         // for (j = 1; j <= 5; ++j) {
         //   elements += "<li>" + v.songData[mem[j][0]].name;
@@ -522,6 +596,21 @@ export default {
         }
       }
     },
+    jumpToTimeline: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_TIMELINE, trackId);
+    },
+    jumpToCollaboration: function (artistId) {
+      EventBus.$emit(Events.JUMP_TO_COLLABORATION, artistId);
+    },
+    jumpToSimilarity: function (trackId) {
+      EventBus.$emit(Events.JUMP_TO_SIMILARITY, trackId);
+    },
+    setSong: function (item) {
+      EventBus.$emit(Events.SET_SONG, item);
+    },
+    setArtist: function (item) {
+      EventBus.$emit(Events.SET_ARTIST, item);
+    }
   },
   computed: {
     state() {

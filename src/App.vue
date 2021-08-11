@@ -12,6 +12,10 @@
           <b-tab title="Search"><SearchView ref="4"/></b-tab>
         </b-tabs>
       </b-card>
+
+      <b-modal ref="genresModal" hide-footer title="Genres" size="xl">
+        <img src="/genre-cloud.png" style="width:100%" />
+      </b-modal>
     </div>
   </div>
 </template>
@@ -33,7 +37,12 @@ export default {
     SearchView,
   },
   data() {
-    return { tabIndex: 1, artistId: undefined, similaritySongId: undefined, timelineSongId: undefined };
+    return {
+      tabIndex: 1,
+      artistId: undefined,
+      similaritySongId: undefined,
+      timelineSongId: undefined,
+    };
   },
   methods: {
     setupEventHandlers: function() {
@@ -44,6 +53,7 @@ export default {
       EventBus.$on(Events.SET_ARTIST, this.setArtist);
       EventBus.$on(Events.SET_TIMELINE_SONG, this.setTimelineSong);
       EventBus.$on(Events.PAUSE_ALL_YOUTUBE, this.pauseAllYoutube);
+      EventBus.$on(Events.OPEN_GENRES_MODAL, this.openGenresModal);
     },
     jumpToTimeline: function(songId) {
       this.timelineSongId = songId;
@@ -78,6 +88,9 @@ export default {
         }
       });
     },
+    openGenresModal: function() {
+      this.$refs.genresModal.show();
+    },
   },
   mounted: function() {
     this.setupEventHandlers();
@@ -109,7 +122,7 @@ $padding: 8px;
 
 .nav-item:first-child > a {
   color: black !important;
-  font-family: 'Indie Flower', cursive;
+  font-family: "Indie Flower", cursive;
   font-weight: bold;
 }
 

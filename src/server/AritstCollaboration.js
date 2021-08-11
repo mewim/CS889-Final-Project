@@ -6,6 +6,20 @@ const ObjectId = mongodb.ObjectId;
 
 const COLLECTION = "artistcollaborations";
 
+router.get("/random", async (_, res) => {
+  const db = await mongoUtil.getDb();
+
+  const randomDocument = (
+    await db
+      .collection(COLLECTION)
+      .aggregate([
+        { $sample: { size: 1 } },
+      ])
+      .toArray()
+  )[0];
+  return res.send({ artist_id: randomDocument.artist_1 });
+});
+
 router.get("/", async (req, res) => {
   const pivot = req.query.pivot;
   let depth = parseInt(req.query.depth);

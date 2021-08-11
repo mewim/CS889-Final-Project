@@ -8,7 +8,7 @@
         </b-card-title>
         <b-card-text id="artist-songs-body" style="text-transform: capitalize;">
           <ul>
-            <li v-for="item in songs" v-bind:key="item.song">
+            <li v-for="item in songs" v-bind:key="item._id">
               <a href="#" @click.prevent="jumpToSimilarity(item._id)" title="Open this song in similarity view">
                 {{ item.song }}
               </a>
@@ -37,6 +37,8 @@
             </li>
           </ul>
           <b-button v-on:click="highlightGenres(null)" title="Clear highlighting artist genres">Reset</b-button>
+          <br><br>
+          <b-button v-on:click="reload()" title="Load a random artist">Random</b-button>
           <br><br>
         </b-card-text>
       </b-card>
@@ -74,7 +76,7 @@ export default {
   },
   mounted: async function () {},
   methods: {
-    tabLoaded: async function (newArtistId="60fb73f6a8b65b7b2d9153df") {
+    tabLoaded: async function (newArtistId=null) {
       if (this.rendered && this.currId === newArtistId) {
         return;
       }
@@ -83,6 +85,10 @@ export default {
     },
 
     reload: async function(id) {
+      if(!id){
+        id = await this.getRandomArtist();
+        this.currId = id;
+      }
       d3.select("#collaboration-network-demo").html("");
       d3.select("#artist-songs-card").style("display", "none");
       d3.select("#artist-card").style("display", "none");
@@ -113,6 +119,12 @@ export default {
           if (item != null && d.genres.includes(item.genre)) {return "#00cc00";}
           return scale(Math.sqrt(d.count));
         });
+    },
+
+    getRandomArtist: function(){
+      return axios
+        .get(`/api/aritstcollaboration/random`)
+        .then((res) => res.data.artist_id);
     },
 
     loadData: async function (id) {

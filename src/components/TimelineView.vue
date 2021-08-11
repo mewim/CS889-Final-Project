@@ -21,7 +21,7 @@
                     <a href="#" @click.prevent="jumpToCollaboration(artist._id)" title="Open this artist in collaboration view">{{artist.name}}</a>
                 <span v-if="key + 1 !== selectedSong.artists.length">, </span></span><br>
                 <b>Release: </b>{{selectedSong.release_year}}<br>
-                <b>Genre: </b>{{selectedSong.genre}}<br>
+                <b>Genre: </b> <a href="#" @click.prevent="openGenresModal()"> {{selectedSong.genre}} </a><br> 
                 <b>{{(attributes[currentAttr] || {}).title}}: </b>{{selectedSong[currentAttr] + ' ' + ((attributes[currentAttr] || {}).unit || '')}}<br>
             </b-card-text>
             <div v-show="selectedSong.url">
@@ -570,6 +570,9 @@ export default {
     setTimelineSong: function (item) {
       EventBus.$emit(Events.SET_TIMELINE_SONG, item);
     },
+    openGenresModal: function(){
+      EventBus.$emit(Events.OPEN_GENRES_MODAL);
+    }
   },
 };
 </script>

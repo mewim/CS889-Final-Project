@@ -15,7 +15,7 @@
           <b>Release:</b> <a href="#" @click.prevent="jumpToTimeline(track.songId)" title="Open this song in timeline view">
             {{ String(track.date) }}
           </a><br>
-          <b>Genre:</b> {{ String(track.genre) }}
+          <b>Genre:</b> <a href="#" @click.prevent="openGenresModal()"> {{ String(track.genre) }} </a>
         </b-card-text>
         <iframe
           type="text/html"
@@ -596,6 +596,9 @@ export default {
     },
     pauseAllYoutube: function() {
       EventBus.$emit(Events.PAUSE_ALL_YOUTUBE);
+    },
+    openGenresModal: function(){
+      EventBus.$emit(Events.OPEN_GENRES_MODAL);
     }
   },
   computed: {
